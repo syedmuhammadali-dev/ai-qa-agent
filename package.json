@@ -1,0 +1,24 @@
+{
+  "name": "ai-qa-agent",
+  "private": true,
+  "version": "0.1.0",
+  "description": "AI-powered autonomous software testing and production-readiness platform",
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "dev": "pnpm --filter web dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "test": "vitest run",
+    "test:rules": "vitest run tests/integration/firestore-rules"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.2",
+    "firebase": "^12.18.0",
+    "firebase-tools": "^13.35.1",
+    "vitest": "^4.1.11"
+  }
+}
