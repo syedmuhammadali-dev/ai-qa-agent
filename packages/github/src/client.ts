@@ -23,6 +23,7 @@ export class GitHubApiError extends Error {
 export interface GitHubClient {
   getIdentity(): Promise<GitHubIdentity>;
   listRepos(): Promise<GitHubRepo[]>;
+  getRepo(owner: string, repo: string): Promise<GitHubRepo>;
   listBranches(owner: string, repo: string): Promise<GitHubBranch[]>;
   getTree(owner: string, repo: string, ref: string): Promise<GitHubTreeEntry[]>;
   getFileContent(
@@ -92,6 +93,29 @@ export function createGitHubClient(accessToken: string): GitHubClient {
         htmlUrl: r.html_url,
         updatedAt: r.updated_at,
       }));
+    },
+
+    async getRepo(owner, repo) {
+      const r = await request<{
+        id: number;
+        owner: { login: string };
+        name: string;
+        full_name: string;
+        private: boolean;
+        default_branch: string;
+        html_url: string;
+        updated_at: string;
+      }>(`/repos/${owner}/${repo}`);
+      return {
+        id: r.id,
+        owner: r.owner.login,
+        name: r.name,
+        fullName: r.full_name,
+        private: r.private,
+        defaultBranch: r.default_branch,
+        htmlUrl: r.html_url,
+        updatedAt: r.updated_at,
+      };
     },
 
     async listBranches(owner, repo) {

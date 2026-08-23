@@ -1,2 +1,4 @@
-// Repository/project discovery: framework, package manager, DB/ORM, auth detection (Phase 4).
-export {};
+export * from "./types.ts";
+export * from "./signals.ts";
+export * from "./analyze.ts";
+export * from "./local-fs-provider.ts";

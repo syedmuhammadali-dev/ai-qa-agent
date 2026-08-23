@@ -1,0 +1,5 @@
+// Fixture only — used to verify project-analyzer's ORM detection.
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}

@@ -1,2 +1,1 @@
-// Test framework detection, execution, and generation (Phase 4).
-export {};
+export * from "./test-command.ts";

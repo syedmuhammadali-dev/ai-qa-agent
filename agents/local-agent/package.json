@@ -11,7 +11,11 @@
   },
   "dependencies": {
     "@ai-qa-agent/agent-core": "workspace:*",
+    "@ai-qa-agent/api-tester": "workspace:*",
+    "@ai-qa-agent/browser-agent": "workspace:*",
     "@ai-qa-agent/command-policy": "workspace:*",
+    "@ai-qa-agent/project-analyzer": "workspace:*",
+    "@ai-qa-agent/qa-engine": "workspace:*",
     "commander": "^12.1.0"
   },
   "devDependencies": {

@@ -56,7 +56,36 @@ last check caught and fixed a real security bug before it shipped. All test data
 afterward. `pnpm typecheck / lint / build / test / test:rules` all pass (68 unit + 10 rules
 tests).
 
-## Phase 4 — QA Engine — TODO
+## Phase 4 — QA Engine — DONE (2026-08-23)
+
+| ID | Title | Status | Verification |
+|----|-------|--------|---------------|
+| T4.1 | `packages/project-analyzer` — framework/DB/ORM/auth detection | DONE | Filesystem-agnostic `FileProvider` (works against a real local checkout *or* the GitHub API, no cloning); 5 unit tests against two real fixture projects (`fixtures/sample-projects/{next-app,node-api}`) confirm both positive detections and that nothing is falsely claimed |
+| T4.2 | Test framework detection | DONE | Part of `project-analyzer`'s signal table (Vitest/Jest/Playwright/Cypress/Testing Library/Mocha/Supertest via deps + config files) |
+| T4.3 | `packages/qa-engine` — run existing tests, real output | DONE | `planTestCommand` prefers the project's own `package.json` "test" script over guessing; wired into `ai-qa-agent test` (detect → policy-gate → execute → audit, reusing the Phase 3 pipeline); 9 unit tests |
+| T4.4 | `packages/browser-agent` — Playwright smoke check | DONE | Real Chromium navigation reporting actual HTTP status, console errors, failed/4xx/5xx requests, and a screenshot; wired into `ai-qa-agent browser-check <url>` |
+| T4.5 | `packages/api-tester` — API discovery + testing | DONE | OpenAPI/Swagger discovery at well-known paths + real HTTP probing + security-header checks; 7 unit tests against a real local HTTP server (not mocked); wired into `ai-qa-agent api-check <url>` |
+
+Full live end-to-end verification (not just typecheck): real dev server, real Firebase
+user/project, real CLI —
+- `ai-qa-agent analyze` / `test` run against the real fixture projects on disk, output matches
+  the unit tests exactly; `pnpm test` inside the Vitest fixture genuinely failed (no test files)
+  and that real exit code 1 was recorded in Firestore — not papered over as a pass.
+- `ai-qa-agent browser-check https://example.com` — real Chromium screenshot written to disk
+  (10.4 KB), real HTTP 200, confirmed in Firestore. Then `browser-check` against a
+  connection-reset URL correctly reported a real navigation failure (exit 1).
+- `ai-qa-agent api-check https://petstore.swagger.io` — real HTTP round trip, real header
+  checks, honestly reported "no spec found" rather than fabricating one.
+- The dashboard's new `/api/projects/[id]/analyze` route (GitHub-backed detection) was verified
+  for its real error paths (400 no repo linked, 409 GitHub not connected); the live
+  "fetch a connected repo's tree via GitHub" path still needs a human to complete the GitHub
+  OAuth consent screen once (same limitation noted in Phase 2) — the underlying `GitHubClient`
+  calls it reuses were already covered by Phase 2's verification.
+
+All test data (Firebase users, Firestore projects, local CLI sessions, `.ai-qa/` run dirs)
+cleaned up after each check. `pnpm typecheck / lint / build / test / test:rules` all pass
+(89 unit tests, 10 Firestore rules tests).
+
 ## Phase 5 — Cinematic UI — TODO
 ## Phase 6 — Intelligence — TODO
 ## Phase 7 — Safe Auto-Fix — TODO

@@ -1,0 +1,2 @@
+# Fixture only — presence is what project-analyzer checks for (pnpm as package manager).
+lockfileVersion: '9.0'

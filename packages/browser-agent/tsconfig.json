@@ -11,7 +11,8 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "declaration": false
+    "declaration": false,
+    "allowImportingTsExtensions": true
   },
   "include": [
     "src"
