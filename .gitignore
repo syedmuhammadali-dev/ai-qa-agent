@@ -1,0 +1,36 @@
+# Secrets — never commit
+.env
+.env.local
+.env.*.local
+
+# Local planning file — not part of shipped docs
+RemainingTasks.md
+
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+.next/
+out/
+dist/
+build/
+*.tsbuildinfo
+
+# Testing / evidence (local-first by design)
+coverage/
+playwright-report/
+test-results/
+.ai-qa/
+
+# Firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# Misc
+.DS_Store
+Thumbs.db
+*.log
+.vercel/
