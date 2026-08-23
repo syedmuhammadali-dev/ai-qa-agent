@@ -20,7 +20,21 @@ check that the page actually renders).
 
 Full verification run: `pnpm typecheck && pnpm lint && pnpm build && pnpm test:rules` — all green.
 
-## Phase 2 — GitHub Integration — TODO
+## Phase 2 — GitHub Integration — DONE (2026-08-23)
+
+| ID | Title | Status | Verification |
+|----|-------|--------|---------------|
+| T2.1 | GitHub OAuth app + `packages/github` client | DONE | HMAC-signed `state` (CSRF-safe), token exchange, `getIdentity`/`listRepos`/`listBranches`/`getTree`/`getFileContent`/`compare`; token stored via Admin SDK at `users/{uid}/private/github`, blocked from all client access (new rules-unit test, 10/10 passing against the real emulator) |
+| T2.2 | Repository/branch discovery | DONE | `/api/github/repos`, `/api/github/repos/[owner]/[repo]/branches`; repo picker UI saves the chosen repo onto `project.githubRepoUrl` |
+| T2.3 | Source inspection (tree + file content via API, no clone) | DONE | `/api/github/repos/[owner]/[repo]/tree` and `.../content`; Files tab browses the tree and renders file content read-only |
+| T2.4 | Diff viewer | DONE | `/api/github/repos/[owner]/[repo]/compare`; Compare tab picks base/head branches and renders per-file patches from GitHub's real compare API |
+
+Full verification run: `pnpm typecheck && pnpm lint && pnpm build && pnpm test:rules` — all green
+(10/10 Firestore rules tests). Live OAuth round-trip still needs a real `GITHUB_CLIENT_ID` /
+`GITHUB_CLIENT_SECRET` (not yet provided) — routes were smoke-tested for correct 401s without a
+token and the app boots/renders cleanly, but the end-to-end "connect → pick repo → browse/diff"
+flow has not been exercised against real GitHub yet.
+
 ## Phase 3 — Local Agent — TODO
 ## Phase 4 — QA Engine — TODO
 ## Phase 5 — Cinematic UI — TODO

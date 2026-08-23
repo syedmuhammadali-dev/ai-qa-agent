@@ -35,6 +35,9 @@ importers:
       '@ai-qa-agent/ai':
         specifier: workspace:*
         version: link:../../packages/ai
+      '@ai-qa-agent/github':
+        specifier: workspace:*
+        version: link:../../packages/github
       '@base-ui/react':
         specifier: ^1.7.0
         version: 1.7.0(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
