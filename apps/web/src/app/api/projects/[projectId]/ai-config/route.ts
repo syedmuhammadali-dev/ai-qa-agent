@@ -1,26 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAIProvider, redactApiKey, type AIProviderConfig, type AIProviderId } from "@ai-qa-agent/ai";
-import { getAdminAuth, getAdminDb, isFirebaseAdminConfigured } from "@/lib/firebase/admin";
+import { getAdminDb, isFirebaseAdminConfigured } from "@/lib/firebase/admin";
+import { requireOwnedProject } from "@/lib/projects/server";
 
 const VALID_PROVIDERS: AIProviderId[] = ["openrouter", "gemini", "openai-compatible"];
-
-async function requireOwnedProject(req: NextRequest, projectId: string) {
-  const authHeader = req.headers.get("authorization");
-  const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
-  if (!token) return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
-
-  const decoded = await getAdminAuth().verifyIdToken(token).catch(() => null);
-  if (!decoded) return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
-
-  const projectSnap = await getAdminDb().collection("projects").doc(projectId).get();
-  if (!projectSnap.exists) {
-    return { error: NextResponse.json({ error: "Project not found" }, { status: 404 }) };
-  }
-  if (projectSnap.data()?.ownerId !== decoded.uid) {
-    return { error: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
-  }
-  return { uid: decoded.uid };
-}
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ projectId: string }> }) {
   if (!isFirebaseAdminConfigured) {

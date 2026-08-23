@@ -1,2 +1,3 @@
-// Risk classification and permission-mode enforcement for AI-issued commands (Phase 3).
-export {};
+export * from "./types.ts";
+export * from "./classify.ts";
+export * from "./decide.ts";

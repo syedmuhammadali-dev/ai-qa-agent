@@ -12,10 +12,12 @@
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
-    "test": "vitest run",
+    "test": "vitest run tests/unit",
     "test:rules": "vitest run tests/integration/firestore-rules"
   },
   "devDependencies": {
+    "@ai-qa-agent/agent-core": "workspace:*",
+    "@ai-qa-agent/command-policy": "workspace:*",
     "@firebase/rules-unit-testing": "^5.0.2",
     "firebase": "^12.18.0",
     "firebase-tools": "^13.35.1",

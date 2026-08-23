@@ -26,6 +26,7 @@ export function useProject(projectId: string) {
             frontendUrl: data.frontendUrl,
             backendUrl: data.backendUrl,
             status: data.status ?? "not_configured",
+            permissionMode: data.permissionMode ?? "manual",
             createdAt: toMillis(data.createdAt),
             updatedAt: toMillis(data.updatedAt),
           });

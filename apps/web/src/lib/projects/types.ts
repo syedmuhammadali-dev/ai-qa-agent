@@ -1,3 +1,5 @@
+import type { PermissionMode } from "@ai-qa-agent/command-policy";
+
 export type ProjectStatus = "not_configured" | "ready" | "running" | "error";
 
 export interface Project {
@@ -8,6 +10,7 @@ export interface Project {
   frontendUrl?: string;
   backendUrl?: string;
   status: ProjectStatus;
+  permissionMode: PermissionMode;
   createdAt: number;
   updatedAt: number;
 }

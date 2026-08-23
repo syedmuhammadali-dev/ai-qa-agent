@@ -7,7 +7,10 @@ export interface GitHubOAuthConfig {
   redirectUri: string;
 }
 
-export function buildAuthorizeUrl(config: GitHubOAuthConfig, state: string): string {
+export function buildAuthorizeUrl(
+  config: GitHubOAuthConfig,
+  state: string,
+): string {
   const url = new URL(AUTHORIZE_URL);
   url.searchParams.set("client_id", config.clientId);
   url.searchParams.set("redirect_uri", config.redirectUri);
@@ -18,7 +21,7 @@ export function buildAuthorizeUrl(config: GitHubOAuthConfig, state: string): str
 
 export async function exchangeCodeForToken(
   config: GitHubOAuthConfig,
-  code: string
+  code: string,
 ): Promise<{ accessToken: string; scope: string; tokenType: string }> {
   const res = await fetch(TOKEN_URL, {
     method: "POST",
@@ -35,12 +38,16 @@ export async function exchangeCodeForToken(
   });
 
   if (!res.ok) {
-    throw new Error(`GitHub token exchange failed: ${res.status} ${await res.text()}`);
+    throw new Error(
+      `GitHub token exchange failed: ${res.status} ${await res.text()}`,
+    );
   }
 
   const data = await res.json();
   if (data.error) {
-    throw new Error(`GitHub token exchange failed: ${data.error_description ?? data.error}`);
+    throw new Error(
+      `GitHub token exchange failed: ${data.error_description ?? data.error}`,
+    );
   }
   return {
     accessToken: data.access_token,

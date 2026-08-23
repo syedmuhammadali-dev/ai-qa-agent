@@ -9,6 +9,11 @@
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
+  "dependencies": {
+    "@ai-qa-agent/agent-core": "workspace:*",
+    "@ai-qa-agent/command-policy": "workspace:*",
+    "commander": "^12.1.0"
+  },
   "devDependencies": {
     "@types/node": "^20",
     "typescript": "^5"

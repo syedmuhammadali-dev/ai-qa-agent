@@ -35,7 +35,27 @@ Full verification run: `pnpm typecheck && pnpm lint && pnpm build && pnpm test:r
 token and the app boots/renders cleanly, but the end-to-end "connect → pick repo → browse/diff"
 flow has not been exercised against real GitHub yet.
 
-## Phase 3 — Local Agent — TODO
+## Phase 3 — Local Agent — DONE (2026-08-23)
+
+| ID | Title | Status | Verification |
+|----|-------|--------|---------------|
+| T3.1 | `agents/local-agent` CLI (`npx ai-qa-agent`) | DONE | Real `commander`-based CLI: `connect`, `disconnect`, `status`, `run`; runs directly via Node's native TS stripping (no build step yet) |
+| T3.2 | Secure connection protocol | DONE | HMAC-signed 10-min pairing code (dashboard) → session token exchange → revocable session doc; CLI fails closed (refuses to run) if the permission-mode check fails for any reason, including a revoked session |
+| T3.3 | Isolated temp workspace | DONE | `.ai-qa/runs/<run-id>/{source,screenshots,videos,traces,logs,reports}` created per run, with retention-based pruning (`pruneRuns`) |
+| T3.4 | `packages/command-policy` risk classification | DONE | READ/LOW/MEDIUM/HIGH/CRITICAL/BLOCKED classifier; 58 passing unit tests |
+| T3.5 | Permission modes (Manual/Auto Safe/Auto Fix) + Edit Manually | DONE | Decision table with 3 modes × 6 risk levels; BLOCKED always blocked in every mode; Settings UI mode selector; CLI prompts Allow/Edit/Deny in MANUAL |
+| T3.6 | Command audit log | DONE | Every attempt (including blocked/denied, before any execution) recorded to `projects/{id}/commands`; secrets redacted twice (agent-side + server-side defense in depth); 10 passing unit tests for the redaction logic (caught a real regex bug) |
+
+Full live end-to-end verification (not just typecheck): started the real dev server, created a
+real Firebase user and a real project **through the actual Firestore security rules** (not
+Admin SDK bypass), generated a real pairing code, connected the real CLI, ran a real `pwd`
+(auto-allowed under Auto Safe, confirmed in Firestore), ran a real `cat .env` (blocked, never
+executed), revoked the session from the dashboard side, then confirmed the CLI refused to run
+anything afterward (fail-closed) instead of silently falling back to a permissive mode — this
+last check caught and fixed a real security bug before it shipped. All test data cleaned up
+afterward. `pnpm typecheck / lint / build / test / test:rules` all pass (68 unit + 10 rules
+tests).
+
 ## Phase 4 — QA Engine — TODO
 ## Phase 5 — Cinematic UI — TODO
 ## Phase 6 — Intelligence — TODO

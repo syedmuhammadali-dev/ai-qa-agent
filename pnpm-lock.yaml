@@ -8,6 +8,12 @@ importers:
 
   .:
     devDependencies:
+      '@ai-qa-agent/agent-core':
+        specifier: workspace:*
+        version: link:packages/agent-core
+      '@ai-qa-agent/command-policy':
+        specifier: workspace:*
+        version: link:packages/command-policy
       '@firebase/rules-unit-testing':
         specifier: ^5.0.2
         version: 5.0.2(firebase@12.18.0)
@@ -22,6 +28,16 @@ importers:
         version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@20.19.43)(vite@8.2.2(@types/node@20.19.43)(jiti@2.7.0)(yaml@2.9.0))
 
   agents/local-agent:
+    dependencies:
+      '@ai-qa-agent/agent-core':
+        specifier: workspace:*
+        version: link:../../packages/agent-core
+      '@ai-qa-agent/command-policy':
+        specifier: workspace:*
+        version: link:../../packages/command-policy
+      commander:
+        specifier: ^12.1.0
+        version: 12.1.0
     devDependencies:
       '@types/node':
         specifier: ^20
@@ -32,9 +48,15 @@ importers:
 
   apps/web:
     dependencies:
+      '@ai-qa-agent/agent-core':
+        specifier: workspace:*
+        version: link:../../packages/agent-core
       '@ai-qa-agent/ai':
         specifier: workspace:*
         version: link:../../packages/ai
+      '@ai-qa-agent/command-policy':
+        specifier: workspace:*
+        version: link:../../packages/command-policy
       '@ai-qa-agent/github':
         specifier: workspace:*
         version: link:../../packages/github
@@ -131,7 +153,14 @@ importers:
         version: 5.9.3
 
   packages/agent-core:
+    dependencies:
+      '@ai-qa-agent/command-policy':
+        specifier: workspace:*
+        version: link:../command-policy
     devDependencies:
+      '@types/node':
+        specifier: ^20
+        version: 20.19.43
       typescript:
         specifier: ^5
         version: 5.9.3
@@ -2134,6 +2163,10 @@ packages:
   commander@11.1.0:
     resolution: {integrity: sha512-yPVavfyCcRhmorC7rWlkHn15b4wDVgVmBA7kV4QVBsF7kv/9TKJAbAXVTxvTnwP8HHKjRCJDClKbciiYS7p0DQ==}
     engines: {node: '>=16'}
+
+  commander@12.1.0:
+    resolution: {integrity: sha512-Vw8qHK3bZM9y/P10u3Vib8o/DdkvA2OtPtZvD871QKjy74Wj1WSKFILMPRPSdUSx5RFK1arlJzEtA4PkFgnbuA==}
+    engines: {node: '>=18'}
 
   commander@14.0.3:
     resolution: {integrity: sha512-H+y0Jo/T1RZ9qPP4Eh1pkcQcLRglraJaSLoyOtHxu6AapkjWVCy2Sit1QQ4x3Dng8qDlSsZEet7g5Pq06MvTgw==}
@@ -7734,6 +7767,8 @@ snapshots:
   commander@10.0.1: {}
 
   commander@11.1.0: {}
+
+  commander@12.1.0: {}
 
   commander@14.0.3: {}
 

@@ -43,6 +43,7 @@ export function useProjects() {
               frontendUrl: data.frontendUrl,
               backendUrl: data.backendUrl,
               status: data.status ?? "not_configured",
+              permissionMode: data.permissionMode ?? "manual",
               createdAt: toMillis(data.createdAt),
               updatedAt: toMillis(data.updatedAt),
             } satisfies Project;
@@ -61,6 +62,7 @@ export function useProjects() {
       ...input,
       ownerId: user.uid,
       status: "not_configured",
+      permissionMode: "manual",
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });

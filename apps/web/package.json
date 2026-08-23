@@ -10,7 +10,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@ai-qa-agent/agent-core": "workspace:*",
     "@ai-qa-agent/ai": "workspace:*",
+    "@ai-qa-agent/command-policy": "workspace:*",
     "@ai-qa-agent/github": "workspace:*",
     "@base-ui/react": "^1.7.0",
     "@monaco-editor/react": "^4.7.0",
