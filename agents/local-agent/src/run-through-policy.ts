@@ -1,11 +1,12 @@
 import { evaluateCommand } from "@ai-qa-agent/command-policy";
 import { createRunWorkspace, hashOutput, previewOutput, pruneRuns } from "@ai-qa-agent/agent-core";
 import type { LocalSession } from "./config.ts";
-import { fetchPermissionMode, submitCommandAudit } from "./api.ts";
+import { createRun, fetchPermissionMode, submitCommandAudit, updateRun } from "./api.ts";
 import { askApproval, askEditedCommand } from "./prompt.ts";
 import { runCommand } from "./exec.ts";
 
 const DEFAULT_RUN_RETENTION = 10;
+const LOG_STREAM_THROTTLE_MS = 500;
 
 /** Full policy → (approval) → execute → audit pipeline shared by every CLI
  * command that ultimately runs something. Returns the process exit code. */
@@ -86,7 +87,53 @@ export async function runCommandThroughPolicy(
   const workspace = await createRunWorkspace(cwd);
   await pruneRuns(cwd, DEFAULT_RUN_RETENTION).catch(() => []);
 
-  const result = await runCommand(finalCommand, cwd, workspace.logsDir);
+  const runId = await createRun(
+    session.apiUrl,
+    session.sessionToken,
+    session.projectId,
+    finalCommand,
+    evaluation.category
+  ).catch((err) => {
+    console.error(`(failed to create live run record: ${err instanceof Error ? err.message : err})`);
+    return null;
+  });
+
+  let liveLog = "";
+  let lastFlush = 0;
+  let flushTimer: ReturnType<typeof setTimeout> | null = null;
+
+  const flush = () => {
+    if (!runId) return;
+    lastFlush = Date.now();
+    void updateRun(session.apiUrl, session.sessionToken, session.projectId, runId, { log: liveLog });
+  };
+
+  const onOutput = (chunk: string) => {
+    liveLog += chunk;
+    if (!runId) return;
+    const now = Date.now();
+    if (now - lastFlush >= LOG_STREAM_THROTTLE_MS) {
+      if (flushTimer) {
+        clearTimeout(flushTimer);
+        flushTimer = null;
+      }
+      flush();
+    } else if (!flushTimer) {
+      flushTimer = setTimeout(flush, LOG_STREAM_THROTTLE_MS);
+    }
+  };
+
+  const result = await runCommand(finalCommand, cwd, workspace.logsDir, onOutput);
+
+  if (flushTimer) clearTimeout(flushTimer);
+  if (runId) {
+    await updateRun(session.apiUrl, session.sessionToken, session.projectId, runId, {
+      log: `${result.stdout}${result.stderr ? `\n--- stderr ---\n${result.stderr}` : ""}`,
+      status: result.exitCode === 0 ? "completed" : "failed",
+      exitCode: result.exitCode,
+      finishedAt: Date.now(),
+    });
+  }
 
   await submitCommandAudit(session.apiUrl, session.sessionToken, session.projectId, {
     command,
@@ -102,6 +149,7 @@ export async function runCommandThroughPolicy(
     outputHash: hashOutput(result.stdout, result.stderr),
     stdoutPreview: previewOutput(result.stdout),
     stderrPreview: previewOutput(result.stderr),
+    runId: runId ?? undefined,
   }).catch((err) => console.error(`(failed to record audit entry: ${err.message})`));
 
   return result.exitCode ?? 1;

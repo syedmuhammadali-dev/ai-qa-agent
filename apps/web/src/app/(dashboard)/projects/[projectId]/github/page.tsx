@@ -21,6 +21,7 @@ import { db } from "@/lib/firebase/client";
 import { useProject } from "@/lib/projects/use-project";
 import { useGitHubActions, useGitHubConnection } from "@/lib/github/use-github";
 import { parseGithubRepoUrl } from "@/lib/github/parse-url";
+import { CodeViewer } from "@/components/code/code-viewer";
 
 export default function GitHubPage({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = use(params);
@@ -348,13 +349,13 @@ function FilesBrowser({ owner, repo }: { owner: string; repo: string }) {
               </button>
             ))}
           </div>
-          <div className="max-h-96 overflow-auto rounded-md border border-border bg-muted/30 p-2">
-            {loadingContent && <Skeleton className="h-40" />}
-            {!loadingContent && content !== null && (
-              <pre className="whitespace-pre-wrap text-xs font-mono">{content}</pre>
+          <div className="overflow-hidden rounded-md border border-border">
+            {loadingContent && <Skeleton className="h-96" />}
+            {!loadingContent && content !== null && selectedPath && (
+              <CodeViewer path={selectedPath} content={content} height="24rem" />
             )}
             {!loadingContent && content === null && (
-              <p className="text-xs text-muted-foreground">Select a file to view its contents.</p>
+              <p className="p-3 text-xs text-muted-foreground">Select a file to view its contents.</p>
             )}
           </div>
         </div>

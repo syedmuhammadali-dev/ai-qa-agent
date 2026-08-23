@@ -1,5 +1,5 @@
 import { hostname } from "node:os";
-import type { CommandAuditInput, LocalAgentSession } from "@ai-qa-agent/agent-core";
+import type { CommandAuditInput, LocalAgentSession, RunStatus } from "@ai-qa-agent/agent-core";
 import type { PermissionMode } from "@ai-qa-agent/command-policy";
 
 export class ApiError extends Error {
@@ -47,5 +47,37 @@ export async function submitCommandAudit(
     method: "POST",
     headers: { Authorization: `Bearer ${sessionToken}`, "Content-Type": "application/json" },
     body: JSON.stringify(record),
+  });
+}
+
+export async function createRun(
+  apiUrl: string,
+  sessionToken: string,
+  projectId: string,
+  command: string,
+  category: string
+): Promise<string> {
+  const data = await request<{ runId: string }>(`${apiUrl}/api/projects/${projectId}/runs`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${sessionToken}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ command, category }),
+  });
+  return data.runId;
+}
+
+export async function updateRun(
+  apiUrl: string,
+  sessionToken: string,
+  projectId: string,
+  runId: string,
+  update: { log?: string; status?: RunStatus; exitCode?: number | null; finishedAt?: number }
+): Promise<void> {
+  await request(`${apiUrl}/api/projects/${projectId}/runs/${runId}`, {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${sessionToken}`, "Content-Type": "application/json" },
+    body: JSON.stringify(update),
+  }).catch((err) => {
+    // Live-log updates are best-effort — never let a flaky network call abort a running command.
+    console.error(`(failed to update run ${runId}: ${err instanceof Error ? err.message : err})`);
   });
 }

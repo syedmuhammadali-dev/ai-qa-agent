@@ -22,10 +22,27 @@ export interface CommandAuditInput {
   outputHash: string;
   stdoutPreview: string;
   stderrPreview: string;
+  runId?: string;
 }
 
 /** What's stored in Firestore projects/{id}/commands/{commandId} and read back by the UI. */
 export interface CommandAuditRecord extends CommandAuditInput {
   id: string;
   createdAt: number;
+}
+
+export type RunStatus = "running" | "completed" | "failed";
+
+/** Live/replayable execution record streamed to Firestore projects/{id}/runs/{runId}
+ * while a command is actually executing, so the dashboard can show real progress —
+ * never a simulated one. */
+export interface RunRecord {
+  id: string;
+  command: string;
+  category: string;
+  status: RunStatus;
+  startedAt: number;
+  finishedAt: number | null;
+  exitCode: number | null;
+  log: string;
 }

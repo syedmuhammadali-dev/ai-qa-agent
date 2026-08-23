@@ -50,6 +50,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
     // Defense in depth: re-redact/truncate server-side even though the agent already does this.
     stdoutPreview: previewOutput(String(body.stdoutPreview ?? "")),
     stderrPreview: previewOutput(String(body.stderrPreview ?? "")),
+    runId: typeof body.runId === "string" ? body.runId.slice(0, 200) : null,
     uid: session.uid,
     sessionId: session.sessionId,
     createdAt: Date.now(),

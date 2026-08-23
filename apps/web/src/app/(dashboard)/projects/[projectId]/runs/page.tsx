@@ -1,12 +1,15 @@
 "use client";
 
 import { use, useState } from "react";
-import { History } from "lucide-react";
+import { History, Terminal as TerminalIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { XtermView } from "@/components/terminal/xterm-view";
 import { useCommands } from "@/lib/commands/use-commands";
-import type { CommandAuditRecord } from "@ai-qa-agent/agent-core";
+import { useRuns } from "@/lib/runs/use-runs";
+import type { CommandAuditRecord, RunRecord } from "@ai-qa-agent/agent-core";
 
 const RISK_VARIANT: Record<string, string> = {
   read: "text-muted-foreground",
@@ -17,44 +20,111 @@ const RISK_VARIANT: Record<string, string> = {
   blocked: "text-red-600",
 };
 
+const STATUS_VARIANT: Record<RunRecord["status"], string> = {
+  running: "text-blue-500",
+  completed: "text-emerald-500",
+  failed: "text-red-500",
+};
+
 export default function RunsPage({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = use(params);
-  const { commands, loading } = useCommands(projectId);
+  const { commands, loading: commandsLoading } = useCommands(projectId);
+  const { runs, loading: runsLoading } = useRuns(projectId);
 
   return (
-    <div className="flex flex-col gap-4 p-6">
-      <div>
-        <h2 className="text-base font-semibold">Command audit log</h2>
-        <p className="text-sm text-muted-foreground">
-          Every command the local agent attempted, real risk classification and permission
-          decision included. Full test-run history (Phase 4) will appear alongside this.
-        </p>
-      </div>
+    <div className="p-6">
+      <Tabs defaultValue="terminal">
+        <TabsList>
+          <TabsTrigger value="terminal">Terminal</TabsTrigger>
+          <TabsTrigger value="audit">Audit Log</TabsTrigger>
+        </TabsList>
 
-      {loading && (
-        <div className="flex flex-col gap-2">
-          <Skeleton className="h-16" />
-          <Skeleton className="h-16" />
-        </div>
-      )}
-
-      {!loading && commands.length === 0 && (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
-            <History className="h-8 w-8 text-muted-foreground" />
+        <TabsContent value="terminal">
+          <div className="flex flex-col gap-4 pt-4">
             <p className="text-sm text-muted-foreground">
-              No commands recorded yet. Connect the local agent from Settings and run one.
+              Real command output, streamed live from the local agent while a command executes.
+              Nothing here is simulated — this is the actual stdout/stderr as it happened.
             </p>
-          </CardContent>
-        </Card>
-      )}
+            {runsLoading && <Skeleton className="h-40" />}
+            {!runsLoading && runs.length === 0 && (
+              <Card className="border-dashed">
+                <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
+                  <TerminalIcon className="h-8 w-8 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
+                    No runs yet. Connect the local agent from Settings and run something.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+            {runs.map((run, i) => (
+              <RunCard key={run.id} run={run} defaultOpen={i === 0} />
+            ))}
+          </div>
+        </TabsContent>
 
-      <div className="flex flex-col gap-2">
-        {commands.map((c) => (
-          <CommandRow key={c.id} command={c} />
-        ))}
-      </div>
+        <TabsContent value="audit">
+          <div className="flex flex-col gap-4 pt-4">
+            <p className="text-sm text-muted-foreground">
+              Every command the local agent attempted, including ones that were blocked or denied
+              before ever running — with real risk classification and permission decision.
+            </p>
+            {commandsLoading && (
+              <div className="flex flex-col gap-2">
+                <Skeleton className="h-16" />
+                <Skeleton className="h-16" />
+              </div>
+            )}
+            {!commandsLoading && commands.length === 0 && (
+              <Card className="border-dashed">
+                <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
+                  <History className="h-8 w-8 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
+                    No commands recorded yet. Connect the local agent from Settings and run one.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+            <div className="flex flex-col gap-2">
+              {commands.map((c) => (
+                <CommandRow key={c.id} command={c} />
+              ))}
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
+  );
+}
+
+function RunCard({ run, defaultOpen }: { run: RunRecord; defaultOpen: boolean }) {
+  const [expanded, setExpanded] = useState(defaultOpen);
+
+  return (
+    <Card>
+      <CardHeader className="cursor-pointer select-none" onClick={() => setExpanded((v) => !v)}>
+        <div className="flex items-center justify-between gap-4">
+          <code className="truncate text-sm">{run.command}</code>
+          <div className="flex shrink-0 items-center gap-2">
+            <Badge variant="outline" className={STATUS_VARIANT[run.status]}>
+              {run.status}
+            </Badge>
+            {run.exitCode !== null && (
+              <Badge variant={run.exitCode === 0 ? "outline" : "destructive"}>exit {run.exitCode}</Badge>
+            )}
+          </div>
+        </div>
+        <CardDescription className="flex items-center gap-3 text-xs">
+          <span>{new Date(run.startedAt).toLocaleString()}</span>
+          <span>{run.category}</span>
+          {run.finishedAt && <span>{run.finishedAt - run.startedAt}ms</span>}
+        </CardDescription>
+      </CardHeader>
+      {expanded && (
+        <CardContent>
+          <XtermView log={run.log} className="h-64 w-full rounded-md border border-border bg-black/90 p-1" />
+        </CardContent>
+      )}
+    </Card>
   );
 }
 

@@ -10,7 +10,12 @@ export interface ExecResult {
   stderr: string;
 }
 
-export function runCommand(command: string, cwd: string, logDir?: string): Promise<ExecResult> {
+export function runCommand(
+  command: string,
+  cwd: string,
+  logDir?: string,
+  onOutput?: (chunk: string) => void
+): Promise<ExecResult> {
   const start = Date.now();
   return new Promise((resolve, reject) => {
     const child = spawn(command, {
@@ -25,10 +30,12 @@ export function runCommand(command: string, cwd: string, logDir?: string): Promi
     child.stdout?.on("data", (chunk: Buffer) => {
       process.stdout.write(chunk);
       stdout += chunk.toString();
+      onOutput?.(chunk.toString());
     });
     child.stderr?.on("data", (chunk: Buffer) => {
       process.stderr.write(chunk);
       stderr += chunk.toString();
+      onOutput?.(chunk.toString());
     });
 
     child.on("error", reject);

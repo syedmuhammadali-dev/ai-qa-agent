@@ -86,7 +86,26 @@ All test data (Firebase users, Firestore projects, local CLI sessions, `.ai-qa/`
 cleaned up after each check. `pnpm typecheck / lint / build / test / test:rules` all pass
 (89 unit tests, 10 Firestore rules tests).
 
-## Phase 5 — Cinematic UI — TODO
+## Phase 5 — Cinematic UI — PARTIAL (2026-08-23)
+
+| ID | Title | Status | Verification |
+|----|-------|--------|---------------|
+| T5.1 | Live execution timeline | DONE | `ExecutionPipeline` component on Overview — every step (Repository Connected / Local Agent Connected / Tests·Browser·API Executed) reflects real Firestore state (a set field, a non-revoked session, a command category having actually run). No step ever lights up without evidence. |
+| T5.2 | Live terminal (xterm.js) wired to real local-agent output | DONE | New `projects/{id}/runs/{runId}` stream: the CLI throttle-flushes real stdout/stderr to Firestore while a command is still executing; `XtermView` subscribes via `onSnapshot` and writes only the new suffix on each update (a real terminal, not a re-render). Runs page has a Terminal tab (live/replay) alongside the existing Audit Log tab. |
+| T5.3 | Live browser view (viewport/action timeline) | DEFERRED | Real screenshots + console/network capture already exist from Phase 4's `browser-check`; a genuinely *live* in-dashboard viewport needs video/CDP streaming infrastructure that deserves its own pass rather than a rushed version now. Not attempted — documented, not silently dropped. |
+| T5.4 | Monaco code viewer | DONE | GitHub page's Files tab now renders real file content in `@monaco-editor/react` (syntax highlighting by extension, read-only) instead of a plain `<pre>`; a `highlightLine` prop exists for Phase 6/7 findings to use once they exist — no fake findings shown now. |
+| T5.5 | Evidence panel (local-first, optional cloud upload) | DEFERRED | Evidence (screenshots, run logs) already stays local-first by construction (Phase 3/4 workspace + Phase 5's Firestore log stream is text-only, no binaries uploaded). Optional cloud upload needs Firebase Storage + rules that don't exist yet — deferred rather than half-built. |
+
+Full live end-to-end verification (not just typecheck): real dev server, real Firebase user/
+project, real CLI. Ran a real multi-second command (`node -e` emitting 6 lines 600ms apart,
+worded to classify as a real LOW/test-risk command) through `ai-qa-agent run`; polled the
+Firestore run doc mid-execution and observed `status: "running"` for real before it later showed
+`status: "completed"` with the full real 6-line log — genuine incremental streaming, not a
+before/after snapshot. Confirmed the command-audit record links to the run via `runId`. All test
+data cleaned up afterward. `pnpm typecheck / lint / build / test / test:rules` all pass (89 unit
+tests, 10 Firestore rules tests, unchanged counts since this phase added infrastructure/UI, not
+new pure-logic packages).
+
 ## Phase 6 — Intelligence — TODO
 ## Phase 7 — Safe Auto-Fix — TODO
 ## Phase 8 — GitHub Release — TODO

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProject } from "@/lib/projects/use-project";
+import { ExecutionPipeline } from "@/components/layout/execution-pipeline";
 
 export default function OverviewPage({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = use(params);
@@ -64,17 +65,25 @@ export default function OverviewPage({ params }: { params: Promise<{ projectId: 
         </CardContent>
       </Card>
 
-      <Card className="border-dashed">
+      <Card>
         <CardHeader>
-          <CardTitle className="text-base">Run an audit</CardTitle>
+          <CardTitle className="text-base">Execution pipeline</CardTitle>
           <CardDescription>
-            The QA engine (framework detection, test execution, browser testing) ships in Phase 4.
-            Once the local agent (Phase 3) is connected, audits will run for real here — no
-            simulated results.
+            Real state only — a step lights up when there&apos;s actual evidence for it (a connected
+            repo, a live local-agent session, a command of that category having run). See{" "}
+            <Button
+              render={<Link href={`/projects/${projectId}/runs`} />}
+              variant="link"
+              size="sm"
+              className="h-auto p-0"
+            >
+              Runs
+            </Button>{" "}
+            for the live output.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button disabled>Run Audit (coming soon)</Button>
+          <ExecutionPipeline projectId={projectId} project={project} />
         </CardContent>
       </Card>
     </div>

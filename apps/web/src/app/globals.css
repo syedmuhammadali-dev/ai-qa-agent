@@ -128,3 +128,7 @@
     @apply font-sans;
   }
 }
+
+.monaco-highlight-line {
+  background-color: rgba(250, 204, 21, 0.15);
+}
