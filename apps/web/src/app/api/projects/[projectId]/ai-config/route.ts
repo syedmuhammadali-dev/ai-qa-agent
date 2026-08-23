@@ -47,7 +47,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
     return NextResponse.json({ error: "Model is required" }, { status: 400 });
   }
 
-  const config: AIProviderConfig = { provider, apiKey, model, baseUrl: baseUrl || undefined };
+  const config: AIProviderConfig = {
+    provider,
+    apiKey,
+    model,
+    ...(baseUrl ? { baseUrl } : {}),
+  };
 
   const result = await getAIProvider(provider).testConnection(config);
   if (!result.ok) {

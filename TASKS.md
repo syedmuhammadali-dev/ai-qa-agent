@@ -106,7 +106,7 @@ data cleaned up afterward. `pnpm typecheck / lint / build / test / test:rules` a
 tests, 10 Firestore rules tests, unchanged counts since this phase added infrastructure/UI, not
 new pure-logic packages).
 
-## Phase 6 — Intelligence — PARTIAL (2026-08-23)
+## Phase 6 — Intelligence — DONE (2026-08-23)
 
 | ID | Title | Status | Verification |
 |----|-------|--------|---------------|
@@ -115,7 +115,7 @@ new pure-logic packages).
 | T6.3 | Accessibility (axe-core) | DONE | Real `@axe-core/playwright` run against a live page; live-verified against example.com — 2 real violations, 13 real passes. Wired to `ai-qa-agent a11y-check <url>`. |
 | T6.4 | Performance | DONE | Real browser Navigation/Resource Timing metrics (TTFB, DOMContentLoaded, load, resource count/size) — not a Lighthouse score (deferred, needs heavier tooling). Live-verified against example.com. Wired to `ai-qa-agent perf-check <url>`. |
 | T6.5 | Observability | DONE | Reuses `project-analyzer`'s Sentry/OpenTelemetry detection (built in Phase 4); new Observability page reports it as an explicit gap when nothing is detected, not silently skipped. |
-| T6.6 | Root-cause diagnosis pipeline | PARTIAL | `/api/projects/[id]/runs/[runId]/diagnose` wired to the project's own configured AI provider (BYOK, `packages/ai` from Phase 1); live-verified the real code path — found the real failed run, correctly refused with an onboarding message since no AI key is configured for test projects, rather than fabricating a diagnosis. The actual LLM call itself is unverified live pending a real provider key from the user. |
+| T6.6 | Root-cause diagnosis pipeline | DONE | `/api/projects/[id]/runs/[runId]/diagnose` wired to the project's own configured AI provider (BYOK, `packages/ai` from Phase 1). Live-verified end to end with a real OpenRouter key: real `openai/gpt-4o-mini` call correctly diagnosed a real injected `TypeError` in an auth function, classified it REVIEW_REQUIRED, and gave a concrete next step — persisted to the run doc and confirmed in Firestore. |
 
 Dashboard: Architecture/Security/Accessibility/Performance pages upgraded from placeholders to
 real CLI-command pointers (matching the Phase 4 Tests/API/Browser pattern); Runs page gained a
@@ -127,8 +127,21 @@ Firebase user/project, real CLI — `architecture` against a fixture with a real
 live: a comment mentioning "eval()" was matching the eval() pattern); `security-scan` without
 `--skip-audit` genuinely ran `npm audit` through the full policy pipeline (real ENOLOCK failure
 from the fixture's stub lockfile — an honest failure, not silently passed); `a11y-check` and
-`perf-check` against example.com with real axe-core violations and real timing numbers. All
-results cross-checked in Firestore. All test data cleaned up afterward.
+`perf-check` against example.com with real axe-core violations and real timing numbers.
+
+**Real bug caught by live testing with a real key**: `POST /api/projects/[id]/ai-config` crashed
+with a 500 (`Cannot use "undefined" as a Firestore value`) whenever `baseUrl` was omitted — i.e.
+every real OpenRouter or Gemini configuration via the Settings page, since only the
+OpenAI-compatible option shows a base-URL field. Fixed by only including `baseUrl` in the stored
+config when present. This had been live for two phases without being caught because no prior
+verification pass had used a real provider key.
+
+**Cleanup-hygiene gap also caught**: deleting a project's Firestore document does not delete its
+subcollections. Every earlier phase's "delete the project" cleanup step left orphaned
+`runs`/`commands`/`private/local-agent/sessions` documents behind. Swept the whole database via
+`collectionGroup` queries and deleted all 28 orphaned documents accumulated across Phases 3-6;
+confirmed zero remaining projects, runs, commands, sessions, or AI configs. Future phases should
+recursively delete (`db.recursiveDelete()`) rather than deleting only the parent doc.
 
 `pnpm typecheck / lint / build / test / test:rules` all pass — 98 unit tests (up from 89),
 10 Firestore rules tests.
