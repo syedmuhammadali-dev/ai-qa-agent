@@ -20,3 +20,31 @@ export interface SmokeCheckResult {
   screenshotPath: string | null;
   navigationError: string | null;
 }
+
+export interface AccessibilityViolation {
+  id: string;
+  impact: string;
+  description: string;
+  help: string;
+  helpUrl: string;
+  nodeCount: number;
+  targets: string[];
+}
+
+export interface AccessibilityCheckResult {
+  url: string;
+  navigationError: string | null;
+  violations: AccessibilityViolation[];
+  passes: number;
+  incomplete: number;
+}
+
+export interface PerformanceCheckResult {
+  url: string;
+  navigationError: string | null;
+  ttfbMs: number | null;
+  domContentLoadedMs: number | null;
+  loadMs: number | null;
+  resourceCount: number;
+  transferSizeBytes: number;
+}

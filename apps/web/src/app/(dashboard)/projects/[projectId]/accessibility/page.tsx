@@ -1,13 +1,20 @@
-import { Accessibility } from "lucide-react";
-import { ComingSoon } from "@/components/layout/coming-soon";
+"use client";
 
-export default function AccessibilityPage() {
+import { use } from "react";
+import { CliCommandCard } from "@/components/layout/cli-command-card";
+import { useProject } from "@/lib/projects/use-project";
+
+export default function AccessibilityPage({ params }: { params: Promise<{ projectId: string }> }) {
+  const { projectId } = use(params);
+  const { project } = useProject(projectId);
+
   return (
-    <ComingSoon
-      icon={Accessibility}
-      title="Accessibility"
-      description="axe-core automated findings, keyboard-navigation checks, and human-review recommendations."
-      phase="Phase 6 (Intelligence)"
+    <CliCommandCard
+      projectId={projectId}
+      title="Accessibility check"
+      description="Runs the real axe-core engine (via Playwright) against a live URL on your own machine — never inside this web app. Reports actual violations with impact level and affected elements, not a guess."
+      command={`ai-qa-agent a11y-check ${project?.frontendUrl ?? "<frontend-url>"}`}
+      footnote="Keyboard-navigation and manual-review checklists build on this in a later pass."
     />
   );
 }

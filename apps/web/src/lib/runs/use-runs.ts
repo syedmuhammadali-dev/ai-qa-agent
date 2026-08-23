@@ -27,6 +27,7 @@ export function useRuns(projectId: string) {
               finishedAt: data.finishedAt,
               exitCode: data.exitCode,
               log: data.log ?? "",
+              diagnosis: data.diagnosis,
             } satisfies RunRecord;
           })
         );

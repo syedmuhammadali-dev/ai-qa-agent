@@ -87,6 +87,7 @@ const READ_RULES: Rule[] = [
   { test: /^\s*(which|where|node\s+-v|npm\s+-v|pnpm\s+-v)\b/i, category: "inspect", reason: "Inspects tool/environment info." },
   { test: /^\s*wc\s+/i, category: "inspect", reason: "Counts lines/words/bytes in a file." },
   { test: /^\s*echo\s+[^>]*$/i, category: "inspect", reason: "Prints text with no redirection." },
+  { test: /\b(npm|pnpm|yarn)\s+audit\b/i, category: "dependency-audit", reason: "Reports known vulnerabilities without changing anything." },
 ];
 
 export function classifyCommand(command: string): CommandClassification {

@@ -17,6 +17,9 @@ importers:
       '@ai-qa-agent/browser-agent':
         specifier: workspace:*
         version: link:packages/browser-agent
+      '@ai-qa-agent/code-analyzer':
+        specifier: workspace:*
+        version: link:packages/code-analyzer
       '@ai-qa-agent/command-policy':
         specifier: workspace:*
         version: link:packages/command-policy
@@ -26,6 +29,9 @@ importers:
       '@ai-qa-agent/qa-engine':
         specifier: workspace:*
         version: link:packages/qa-engine
+      '@ai-qa-agent/security-engine':
+        specifier: workspace:*
+        version: link:packages/security-engine
       '@firebase/rules-unit-testing':
         specifier: ^5.0.2
         version: 5.0.2(firebase@12.18.0)
@@ -50,6 +56,9 @@ importers:
       '@ai-qa-agent/browser-agent':
         specifier: workspace:*
         version: link:../../packages/browser-agent
+      '@ai-qa-agent/code-analyzer':
+        specifier: workspace:*
+        version: link:../../packages/code-analyzer
       '@ai-qa-agent/command-policy':
         specifier: workspace:*
         version: link:../../packages/command-policy
@@ -59,6 +68,9 @@ importers:
       '@ai-qa-agent/qa-engine':
         specifier: workspace:*
         version: link:../../packages/qa-engine
+      '@ai-qa-agent/security-engine':
+        specifier: workspace:*
+        version: link:../../packages/security-engine
       commander:
         specifier: ^12.1.0
         version: 12.1.0
@@ -209,6 +221,9 @@ importers:
 
   packages/browser-agent:
     dependencies:
+      '@axe-core/playwright':
+        specifier: ^4.13.0
+        version: 4.13.0(playwright-core@1.62.1)
       playwright:
         specifier: ^1.62.1
         version: 1.62.1
@@ -221,7 +236,14 @@ importers:
         version: 5.9.3
 
   packages/code-analyzer:
+    dependencies:
+      '@ai-qa-agent/project-analyzer':
+        specifier: workspace:*
+        version: link:../project-analyzer
     devDependencies:
+      '@types/node':
+        specifier: ^20
+        version: 20.19.43
       typescript:
         specifier: ^5
         version: 5.9.3
@@ -273,7 +295,14 @@ importers:
         version: 5.9.3
 
   packages/security-engine:
+    dependencies:
+      '@ai-qa-agent/project-analyzer':
+        specifier: workspace:*
+        version: link:../project-analyzer
     devDependencies:
+      '@types/node':
+        specifier: ^20
+        version: 20.19.43
       typescript:
         specifier: ^5
         version: 5.9.3
@@ -292,6 +321,11 @@ packages:
 
   '@apidevtools/json-schema-ref-parser@9.1.2':
     resolution: {integrity: sha512-r1w81DpR+KyRWd3f+rk6TNqMgedmAxZP5v5KWlXQWlgMUUtyEJch0DKEci1SorPMiSeM8XPl7MZ3miJ60JIpQg==}
+
+  '@axe-core/playwright@4.13.0':
+    resolution: {integrity: sha512-6YLx+kxXu5GJceG4ozFg+33a2EMTdjYwWGloJ3sb9Kta5pp+ZNS53uxGVog5JetIY8s++P5UrtX+cri+u0VAVg==}
+    peerDependencies:
+      playwright-core: '>= 1.0.0'
 
   '@babel/code-frame@7.29.7':
     resolution: {integrity: sha512-Aup7aUOfpbAUg2ROOJN6Iw5f9DMBlzu0mIkm/malLQFN/YQgO48wCj0Kxa3sEHJvPVFg7siR+qRInwXd2qhQKw==}
@@ -5802,6 +5836,11 @@ snapshots:
       call-me-maybe: 1.0.2
       js-yaml: 4.3.1
 
+  '@axe-core/playwright@4.13.0(playwright-core@1.62.1)':
+    dependencies:
+      axe-core: 4.13.0
+      playwright-core: 1.62.1
+
   '@babel/code-frame@7.29.7':
     dependencies:
       '@babel/helper-validator-identifier': 7.29.7
@@ -8318,7 +8357,7 @@ snapshots:
       eslint: 9.39.5(jiti@2.7.0)
       eslint-import-resolver-node: 0.3.10
       eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.67.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.9.3))(eslint@9.39.5(jiti@2.7.0)))(eslint@9.39.5(jiti@2.7.0))
-      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.67.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.9.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.67.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.9.3))(eslint@9.39.5(jiti@2.7.0)))(eslint@9.39.5(jiti@2.7.0)))(eslint@9.39.5(jiti@2.7.0))
+      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.67.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.9.3))(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.5(jiti@2.7.0))
       eslint-plugin-jsx-a11y: 6.10.2(eslint@9.39.5(jiti@2.7.0))
       eslint-plugin-react: 7.37.5(eslint@9.39.5(jiti@2.7.0))
       eslint-plugin-react-hooks: 7.1.1(eslint@9.39.5(jiti@2.7.0))
@@ -8351,7 +8390,7 @@ snapshots:
       tinyglobby: 0.2.17
       unrs-resolver: 1.12.2
     optionalDependencies:
-      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.67.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.9.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.67.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.9.3))(eslint@9.39.5(jiti@2.7.0)))(eslint@9.39.5(jiti@2.7.0)))(eslint@9.39.5(jiti@2.7.0))
+      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.67.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.9.3))(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.5(jiti@2.7.0))
     transitivePeerDependencies:
       - supports-color
 
@@ -8366,7 +8405,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.67.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.9.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.67.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.9.3))(eslint@9.39.5(jiti@2.7.0)))(eslint@9.39.5(jiti@2.7.0)))(eslint@9.39.5(jiti@2.7.0)):
+  eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.67.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.9.3))(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.5(jiti@2.7.0)):
     dependencies:
       '@rtsao/scc': 1.1.0
       array-includes: 3.1.9

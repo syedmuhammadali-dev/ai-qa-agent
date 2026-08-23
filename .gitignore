@@ -2,6 +2,9 @@
 .env
 .env.local
 .env.*.local
+# Exception: a fixture whose entire purpose is verifying that security-engine
+# detects a tracked .env file. Contains only a fake, non-functional value.
+!fixtures/sample-projects/security-app/.env
 
 # Local planning file — not part of shipped docs
 RemainingTasks.md

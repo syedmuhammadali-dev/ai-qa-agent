@@ -11,6 +11,8 @@ describe("classifyCommand", () => {
     ["git log --oneline", "read"],
     ["cat package.json", "read"],
     ["grep -r foo src/", "read"],
+    ["pnpm audit", "read"],
+    ["npm audit --json", "read"],
   ])("%s -> %s", (command, risk) => {
     expect(classifyCommand(command).risk).toBe(risk);
   });

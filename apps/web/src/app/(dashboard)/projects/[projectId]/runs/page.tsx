@@ -1,12 +1,15 @@
 "use client";
 
 import { use, useState } from "react";
-import { History, Terminal as TerminalIcon } from "lucide-react";
+import { toast } from "sonner";
+import { History, Sparkles, Terminal as TerminalIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { XtermView } from "@/components/terminal/xterm-view";
+import { useAuth } from "@/lib/auth/auth-context";
 import { useCommands } from "@/lib/commands/use-commands";
 import { useRuns } from "@/lib/runs/use-runs";
 import type { CommandAuditRecord, RunRecord } from "@ai-qa-agent/agent-core";
@@ -57,7 +60,7 @@ export default function RunsPage({ params }: { params: Promise<{ projectId: stri
               </Card>
             )}
             {runs.map((run, i) => (
-              <RunCard key={run.id} run={run} defaultOpen={i === 0} />
+              <RunCard key={run.id} projectId={projectId} run={run} defaultOpen={i === 0} />
             ))}
           </div>
         </TabsContent>
@@ -96,8 +99,30 @@ export default function RunsPage({ params }: { params: Promise<{ projectId: stri
   );
 }
 
-function RunCard({ run, defaultOpen }: { run: RunRecord; defaultOpen: boolean }) {
+function RunCard({ projectId, run, defaultOpen }: { projectId: string; run: RunRecord; defaultOpen: boolean }) {
   const [expanded, setExpanded] = useState(defaultOpen);
+  const { user } = useAuth();
+  const [diagnosing, setDiagnosing] = useState(false);
+  const [diagnosis, setDiagnosis] = useState(run.diagnosis);
+
+  async function handleDiagnose() {
+    if (!user) return;
+    setDiagnosing(true);
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch(`/api/projects/${projectId}/runs/${run.id}/diagnose`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Diagnosis failed");
+      setDiagnosis(data.diagnosis);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Diagnosis failed");
+    } finally {
+      setDiagnosing(false);
+    }
+  }
 
   return (
     <Card>
@@ -120,8 +145,35 @@ function RunCard({ run, defaultOpen }: { run: RunRecord; defaultOpen: boolean })
         </CardDescription>
       </CardHeader>
       {expanded && (
-        <CardContent>
+        <CardContent className="flex flex-col gap-3">
           <XtermView log={run.log} className="h-64 w-full rounded-md border border-border bg-black/90 p-1" />
+          {run.status === "failed" && (
+            <div className="flex flex-col gap-2">
+              {!diagnosis && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-fit"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDiagnose();
+                  }}
+                  disabled={diagnosing}
+                >
+                  <Sparkles className="h-4 w-4" />
+                  {diagnosing ? "Diagnosing..." : "Diagnose with AI"}
+                </Button>
+              )}
+              {diagnosis && (
+                <div className="rounded-md border border-border bg-muted/30 p-3 text-sm">
+                  <p className="mb-1 text-xs text-muted-foreground">
+                    {diagnosis.model} — {new Date(diagnosis.generatedAt).toLocaleString()}
+                  </p>
+                  <p className="whitespace-pre-wrap">{diagnosis.summary}</p>
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       )}
     </Card>

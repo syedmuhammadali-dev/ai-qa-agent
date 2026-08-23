@@ -36,6 +36,12 @@ export type RunStatus = "running" | "completed" | "failed";
 /** Live/replayable execution record streamed to Firestore projects/{id}/runs/{runId}
  * while a command is actually executing, so the dashboard can show real progress —
  * never a simulated one. */
+export interface RunDiagnosis {
+  summary: string;
+  model: string;
+  generatedAt: number;
+}
+
 export interface RunRecord {
   id: string;
   command: string;
@@ -45,4 +51,5 @@ export interface RunRecord {
   finishedAt: number | null;
   exitCode: number | null;
   log: string;
+  diagnosis?: RunDiagnosis;
 }

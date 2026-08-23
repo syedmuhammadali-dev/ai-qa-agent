@@ -2,8 +2,10 @@
 import { Command } from "commander";
 import { analyzeProject, createLocalFileProvider } from "@ai-qa-agent/project-analyzer";
 import { planTestCommand } from "@ai-qa-agent/qa-engine";
-import { runSmokeCheck } from "@ai-qa-agent/browser-agent";
+import { runAccessibilityCheck, runPerformanceCheck, runSmokeCheck } from "@ai-qa-agent/browser-agent";
 import { checkSecurityHeaders, discoverOpenApiSpec, probeEndpoint } from "@ai-qa-agent/api-tester";
+import { analyzeArchitecture } from "@ai-qa-agent/code-analyzer";
+import { scanForSecurityFindings } from "@ai-qa-agent/security-engine";
 import { createRunWorkspace, hashOutput, previewOutput, pruneRuns } from "@ai-qa-agent/agent-core";
 import { clearSession, loadSession, requireSession, saveSession } from "./config.ts";
 import { exchangePairingCode, submitCommandAudit } from "./api.ts";
@@ -171,6 +173,85 @@ program
   });
 
 program
+  .command("a11y-check <url>")
+  .description("Run the real axe-core accessibility engine against a URL")
+  .option("--reason <reason>", "Why this check is being run", "Manual accessibility check via ai-qa-agent CLI")
+  .action(async (url: string, opts: { reason: string }) => {
+    const session = requireSession();
+    console.log(`\nRunning axe-core against ${url} ...`);
+    const start = Date.now();
+    const result = await runAccessibilityCheck(url);
+    const durationMs = Date.now() - start;
+
+    if (result.navigationError) {
+      console.error(`Navigation error: ${result.navigationError}`);
+    } else {
+      console.log(`Violations: ${result.violations.length} (${result.passes} checks passed)`);
+      for (const v of result.violations) {
+        console.log(`  [${v.impact}] ${v.id}: ${v.help} (${v.nodeCount} element(s))`);
+      }
+    }
+
+    const summary = JSON.stringify(result, null, 2);
+    const failed = Boolean(result.navigationError) || result.violations.length > 0;
+    await submitCommandAudit(session.apiUrl, session.sessionToken, session.projectId, {
+      command: `a11y-check ${url}`,
+      reason: opts.reason,
+      risk: "read",
+      category: "accessibility-check",
+      decision: "auto_allow",
+      permissionMode: "auto_safe",
+      approved: true,
+      exitCode: failed ? 1 : 0,
+      durationMs,
+      outputHash: hashOutput(summary, ""),
+      stdoutPreview: previewOutput(summary),
+      stderrPreview: result.navigationError ? previewOutput(result.navigationError) : "",
+    }).catch((err) => console.error(`(failed to record audit entry: ${err.message})`));
+
+    process.exitCode = failed ? 1 : 0;
+  });
+
+program
+  .command("perf-check <url>")
+  .description("Real browser Navigation/Resource Timing metrics for a URL (not a Lighthouse score)")
+  .option("--reason <reason>", "Why this check is being run", "Manual performance check via ai-qa-agent CLI")
+  .action(async (url: string, opts: { reason: string }) => {
+    const session = requireSession();
+    console.log(`\nMeasuring ${url} ...`);
+    const start = Date.now();
+    const result = await runPerformanceCheck(url);
+    const durationMs = Date.now() - start;
+
+    if (result.navigationError) {
+      console.error(`Navigation error: ${result.navigationError}`);
+    } else {
+      console.log(`TTFB: ${result.ttfbMs?.toFixed(0)}ms`);
+      console.log(`DOMContentLoaded: ${result.domContentLoadedMs?.toFixed(0)}ms`);
+      console.log(`Load: ${result.loadMs?.toFixed(0)}ms`);
+      console.log(`Resources: ${result.resourceCount} (${(result.transferSizeBytes / 1024).toFixed(1)} KB transferred)`);
+    }
+
+    const summary = JSON.stringify(result, null, 2);
+    await submitCommandAudit(session.apiUrl, session.sessionToken, session.projectId, {
+      command: `perf-check ${url}`,
+      reason: opts.reason,
+      risk: "read",
+      category: "performance-check",
+      decision: "auto_allow",
+      permissionMode: "auto_safe",
+      approved: true,
+      exitCode: result.navigationError ? 1 : 0,
+      durationMs,
+      outputHash: hashOutput(summary, ""),
+      stdoutPreview: previewOutput(summary),
+      stderrPreview: result.navigationError ? previewOutput(result.navigationError) : "",
+    }).catch((err) => console.error(`(failed to record audit entry: ${err.message})`));
+
+    process.exitCode = result.navigationError ? 1 : 0;
+  });
+
+program
   .command("api-check <baseUrl>")
   .description("Discover an OpenAPI spec (if any) and probe endpoints with real HTTP requests")
   .option("--reason <reason>", "Why this check is being run", "Manual API check via ai-qa-agent CLI")
@@ -231,6 +312,93 @@ program
 
     console.log(`\n${endpointChecks.length - failures.length}/${endpointChecks.length} endpoints OK`);
     process.exitCode = failures.length > 0 ? 1 : 0;
+  });
+
+program
+  .command("architecture")
+  .description("Analyze real import structure: circular dependencies, oversized files, coupling")
+  .option("--reason <reason>", "Why this check is being run", "Manual architecture check via ai-qa-agent CLI")
+  .option("--cwd <dir>", "Project directory", process.cwd())
+  .action(async (opts: { reason: string; cwd: string }) => {
+    const session = requireSession();
+    const start = Date.now();
+    const provider = createLocalFileProvider(opts.cwd);
+
+    console.log("\nScanning import graph...");
+    const result = await analyzeArchitecture(provider);
+    const durationMs = Date.now() - start;
+
+    console.log(`Files analyzed: ${result.fileCount}`);
+    console.log(`Circular dependencies: ${result.circularDependencies.length}`);
+    for (const c of result.circularDependencies) console.log(`  - ${c.cycle.join(" -> ")}`);
+    console.log(`Oversized files: ${result.oversizedFiles.length}`);
+    for (const f of result.oversizedFiles.slice(0, 10)) console.log(`  - ${f.path} (${f.lines} lines)`);
+
+    const summary = JSON.stringify(result, null, 2);
+    await submitCommandAudit(session.apiUrl, session.sessionToken, session.projectId, {
+      command: `architecture --cwd ${opts.cwd}`,
+      reason: opts.reason,
+      risk: "read",
+      category: "architecture",
+      decision: "auto_allow",
+      permissionMode: "auto_safe",
+      approved: true,
+      exitCode: 0,
+      durationMs,
+      outputHash: hashOutput(summary, ""),
+      stdoutPreview: previewOutput(summary),
+      stderrPreview: "",
+    }).catch((err) => console.error(`(failed to record audit entry: ${err.message})`));
+
+    console.log(`\n${result.findings.length} finding(s).`);
+  });
+
+program
+  .command("security-scan")
+  .description("Static secret/injection/XSS/CORS scan of real source files, plus a real dependency audit")
+  .option("--reason <reason>", "Why this scan is being run", "Manual security scan via ai-qa-agent CLI")
+  .option("--cwd <dir>", "Project directory", process.cwd())
+  .option("--skip-audit", "Skip running the package manager's dependency audit", false)
+  .action(async (opts: { reason: string; cwd: string; skipAudit: boolean }) => {
+    const session = requireSession();
+    const start = Date.now();
+    const provider = createLocalFileProvider(opts.cwd);
+
+    console.log("\nScanning source files...");
+    const result = await scanForSecurityFindings(provider);
+    console.log(`Files scanned: ${result.filesScanned}`);
+    console.log(`Findings: ${result.findings.length}`);
+    for (const f of result.findings) {
+      console.log(`  [${f.severity}] ${f.problem} (${f.evidence})`);
+    }
+    const durationMs = Date.now() - start;
+
+    const summary = JSON.stringify(result, null, 2);
+    await submitCommandAudit(session.apiUrl, session.sessionToken, session.projectId, {
+      command: `security-scan --cwd ${opts.cwd}`,
+      reason: opts.reason,
+      risk: "read",
+      category: "security-scan",
+      decision: "auto_allow",
+      permissionMode: "auto_safe",
+      approved: true,
+      exitCode: result.findings.some((f) => f.severity === "critical" || f.severity === "high") ? 1 : 0,
+      durationMs,
+      outputHash: hashOutput(summary, ""),
+      stdoutPreview: previewOutput(summary),
+      stderrPreview: "",
+    }).catch((err) => console.error(`(failed to record audit entry: ${err.message})`));
+
+    if (!opts.skipAudit) {
+      const analysis = await analyzeProject(provider);
+      const pm = analysis.packageManager ?? "npm";
+      console.log(`\nRunning real dependency audit (${pm} audit)...`);
+      const exitCode = await runCommandThroughPolicy(session, `${pm} audit`, "Dependency vulnerability audit", opts.cwd);
+      process.exitCode = exitCode;
+      return;
+    }
+
+    process.exitCode = result.findings.some((f) => f.severity === "critical" || f.severity === "high") ? 1 : 0;
   });
 
 program.parseAsync(process.argv).catch((err) => {
