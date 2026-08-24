@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import { mkdir, writeFile } from "node:fs/promises";
+import { dirname, join } from "node:path";
 import { Command } from "commander";
 import { analyzeProject, createLocalFileProvider } from "@ai-qa-agent/project-analyzer";
 import { planTestCommand } from "@ai-qa-agent/qa-engine";
@@ -8,8 +10,9 @@ import { analyzeArchitecture } from "@ai-qa-agent/code-analyzer";
 import { scanForSecurityFindings } from "@ai-qa-agent/security-engine";
 import { createRunWorkspace, hashOutput, previewOutput, pruneRuns } from "@ai-qa-agent/agent-core";
 import { clearSession, loadSession, requireSession, saveSession } from "./config.ts";
-import { exchangePairingCode, submitCommandAudit } from "./api.ts";
+import { exchangePairingCode, fetchPendingFixes, reportFixApplied, submitCommandAudit } from "./api.ts";
 import { runCommandThroughPolicy } from "./run-through-policy.ts";
+import { runCommand } from "./exec.ts";
 
 const program = new Command();
 program.name("ai-qa-agent").description("Local agent for the AI QA Agent platform").version("0.1.0");
@@ -399,6 +402,63 @@ program
     }
 
     process.exitCode = result.findings.some((f) => f.severity === "critical" || f.severity === "high") ? 1 : 0;
+  });
+
+program
+  .command("apply-fixes")
+  .description("Apply AI-proposed fixes you've approved on the dashboard, then run the regression test suite")
+  .option("--cwd <dir>", "Project directory", process.cwd())
+  .action(async (opts: { cwd: string }) => {
+    const session = requireSession();
+    const fixes = await fetchPendingFixes(session.apiUrl, session.sessionToken, session.projectId);
+
+    if (fixes.length === 0) {
+      console.log("No approved fixes waiting to be applied.");
+      return;
+    }
+
+    let anyFailed = false;
+
+    for (const fix of fixes) {
+      console.log(`\nApplying fix to ${fix.filePath} (${fix.safety})`);
+      console.log(fix.explanation);
+
+      const targetPath = join(opts.cwd, ...fix.filePath.split("/"));
+      await mkdir(dirname(targetPath), { recursive: true });
+      await writeFile(targetPath, fix.patchedContent, "utf8");
+      console.log(`Wrote ${fix.filePath}`);
+
+      const provider = createLocalFileProvider(opts.cwd);
+      const analysis = await analyzeProject(provider);
+      const pkgRaw = await provider.readFile("package.json");
+      const scripts = pkgRaw ? (JSON.parse(pkgRaw).scripts as Record<string, string> | undefined) : undefined;
+      const plan = planTestCommand(analysis, scripts);
+
+      if (!plan) {
+        console.log("No test framework detected — skipping regression run, marking as applied without verification.");
+        await reportFixApplied(session.apiUrl, session.sessionToken, session.projectId, fix.runId, {
+          regressionPassed: true,
+          regressionLog: "(no test framework detected — regression not run)",
+          regressionExitCode: null,
+        });
+        continue;
+      }
+
+      console.log(`Running regression: ${plan.command}`);
+      const workspace = await createRunWorkspace(opts.cwd);
+      const result = await runCommand(plan.command, opts.cwd, workspace.logsDir);
+      const passed = result.exitCode === 0;
+      if (!passed) anyFailed = true;
+
+      console.log(passed ? "Regression passed." : `Regression failed (exit ${result.exitCode}).`);
+      await reportFixApplied(session.apiUrl, session.sessionToken, session.projectId, fix.runId, {
+        regressionPassed: passed,
+        regressionLog: `${result.stdout}\n${result.stderr}`,
+        regressionExitCode: result.exitCode,
+      });
+    }
+
+    process.exitCode = anyFailed ? 1 : 0;
   });
 
 program.parseAsync(process.argv).catch((err) => {

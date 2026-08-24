@@ -28,6 +28,7 @@ export function useRuns(projectId: string) {
               exitCode: data.exitCode,
               log: data.log ?? "",
               diagnosis: data.diagnosis,
+              fix: data.fix,
             } satisfies RunRecord;
           })
         );

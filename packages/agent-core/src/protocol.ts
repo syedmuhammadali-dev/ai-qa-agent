@@ -42,6 +42,30 @@ export interface RunDiagnosis {
   generatedAt: number;
 }
 
+export type FixStatus = "proposed" | "approved" | "rejected" | "applied" | "regression_failed";
+export type FixSafety = "SAFE" | "REVIEW_REQUIRED" | "DANGEROUS";
+
+export interface FixProposal {
+  filePath: string;
+  targetReason: string;
+  originalContent: string;
+  patchedContent: string;
+  explanation: string;
+  safety: FixSafety;
+  status: FixStatus;
+  createdAt: number;
+  decidedAt?: number;
+  appliedAt?: number;
+  regressionLog?: string;
+  regressionExitCode?: number | null;
+}
+
+/** A fix pending application, as the local agent sees it (no need for the
+ * run-level metadata it doesn't use). */
+export interface PendingFix extends FixProposal {
+  runId: string;
+}
+
 export interface RunRecord {
   id: string;
   command: string;
@@ -52,4 +76,5 @@ export interface RunRecord {
   exitCode: number | null;
   log: string;
   diagnosis?: RunDiagnosis;
+  fix?: FixProposal;
 }

@@ -1,5 +1,5 @@
 import { hostname } from "node:os";
-import type { CommandAuditInput, LocalAgentSession, RunStatus } from "@ai-qa-agent/agent-core";
+import type { CommandAuditInput, LocalAgentSession, PendingFix, RunStatus } from "@ai-qa-agent/agent-core";
 import type { PermissionMode } from "@ai-qa-agent/command-policy";
 
 export class ApiError extends Error {
@@ -79,5 +79,26 @@ export async function updateRun(
   }).catch((err) => {
     // Live-log updates are best-effort — never let a flaky network call abort a running command.
     console.error(`(failed to update run ${runId}: ${err instanceof Error ? err.message : err})`);
+  });
+}
+
+export async function fetchPendingFixes(apiUrl: string, sessionToken: string, projectId: string): Promise<PendingFix[]> {
+  const data = await request<{ fixes: PendingFix[] }>(`${apiUrl}/api/projects/${projectId}/fixes/pending`, {
+    headers: { Authorization: `Bearer ${sessionToken}` },
+  });
+  return data.fixes;
+}
+
+export async function reportFixApplied(
+  apiUrl: string,
+  sessionToken: string,
+  projectId: string,
+  runId: string,
+  result: { regressionPassed: boolean; regressionLog: string; regressionExitCode: number | null }
+): Promise<void> {
+  await request(`${apiUrl}/api/projects/${projectId}/runs/${runId}/fix-applied`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${sessionToken}`, "Content-Type": "application/json" },
+    body: JSON.stringify(result),
   });
 }

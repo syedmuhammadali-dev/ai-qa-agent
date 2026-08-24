@@ -4,6 +4,7 @@ import { geminiProvider } from "./providers/gemini";
 import { openAICompatibleProvider } from "./providers/openai-compatible";
 
 export * from "./types";
+export * from "./fix-proposal";
 
 const providers: Record<AIProviderId, AIProvider> = {
   openrouter: openRouterProvider,

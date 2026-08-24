@@ -17,6 +17,7 @@
   },
   "devDependencies": {
     "@ai-qa-agent/agent-core": "workspace:*",
+    "@ai-qa-agent/ai": "workspace:*",
     "@ai-qa-agent/api-tester": "workspace:*",
     "@ai-qa-agent/browser-agent": "workspace:*",
     "@ai-qa-agent/code-analyzer": "workspace:*",

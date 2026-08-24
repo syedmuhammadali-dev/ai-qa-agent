@@ -2,17 +2,18 @@
 
 import { use, useState } from "react";
 import { toast } from "sonner";
-import { History, Sparkles, Terminal as TerminalIcon } from "lucide-react";
+import { CheckCircle2, History, Sparkles, Terminal as TerminalIcon, Wrench, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { XtermView } from "@/components/terminal/xterm-view";
+import { FixDiffViewer } from "@/components/code/fix-diff-viewer";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useCommands } from "@/lib/commands/use-commands";
 import { useRuns } from "@/lib/runs/use-runs";
-import type { CommandAuditRecord, RunRecord } from "@ai-qa-agent/agent-core";
+import type { CommandAuditRecord, FixProposal, RunRecord } from "@ai-qa-agent/agent-core";
 
 const RISK_VARIANT: Record<string, string> = {
   read: "text-muted-foreground",
@@ -104,6 +105,8 @@ function RunCard({ projectId, run, defaultOpen }: { projectId: string; run: RunR
   const { user } = useAuth();
   const [diagnosing, setDiagnosing] = useState(false);
   const [diagnosis, setDiagnosis] = useState(run.diagnosis);
+  const [proposingFix, setProposingFix] = useState(false);
+  const [fix, setFix] = useState(run.fix);
 
   async function handleDiagnose() {
     if (!user) return;
@@ -121,6 +124,43 @@ function RunCard({ projectId, run, defaultOpen }: { projectId: string; run: RunR
       toast.error(err instanceof Error ? err.message : "Diagnosis failed");
     } finally {
       setDiagnosing(false);
+    }
+  }
+
+  async function handleProposeFix() {
+    if (!user) return;
+    setProposingFix(true);
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch(`/api/projects/${projectId}/runs/${run.id}/propose-fix`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Fix proposal failed");
+      setFix(data.fix);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Fix proposal failed");
+    } finally {
+      setProposingFix(false);
+    }
+  }
+
+  async function handleFixDecision(decision: "approved" | "rejected") {
+    if (!user) return;
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch(`/api/projects/${projectId}/runs/${run.id}/fix-decision`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ decision }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Failed to record decision");
+      setFix((prev) => (prev ? { ...prev, status: decision } : prev));
+      toast.success(decision === "approved" ? "Approved — run `ai-qa-agent apply-fixes` to apply it" : "Rejected");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to record decision");
     }
   }
 
@@ -172,11 +212,81 @@ function RunCard({ projectId, run, defaultOpen }: { projectId: string; run: RunR
                   <p className="whitespace-pre-wrap">{diagnosis.summary}</p>
                 </div>
               )}
+              {diagnosis && !fix && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-fit"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleProposeFix();
+                  }}
+                  disabled={proposingFix}
+                >
+                  <Wrench className="h-4 w-4" />
+                  {proposingFix ? "Proposing fix..." : "Propose Fix"}
+                </Button>
+              )}
+              {fix && <FixSection fix={fix} onDecision={handleFixDecision} />}
             </div>
           )}
         </CardContent>
       )}
     </Card>
+  );
+}
+
+const FIX_SAFETY_VARIANT: Record<FixProposal["safety"], string> = {
+  SAFE: "text-emerald-500 border-emerald-500/40",
+  REVIEW_REQUIRED: "text-amber-500 border-amber-500/40",
+  DANGEROUS: "text-red-500 border-red-500/40",
+};
+
+function FixSection({ fix, onDecision }: { fix: FixProposal; onDecision: (decision: "approved" | "rejected") => void }) {
+  return (
+    <div className="flex flex-col gap-2 rounded-md border border-border p-3" onClick={(e) => e.stopPropagation()}>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <code className="text-xs">{fix.filePath}</code>
+          <Badge variant="outline" className={FIX_SAFETY_VARIANT[fix.safety]}>
+            {fix.safety.replace("_", " ")}
+          </Badge>
+          <Badge variant="outline">{fix.status}</Badge>
+        </div>
+      </div>
+      <p className="text-xs text-muted-foreground">{fix.explanation}</p>
+
+      {fix.safety === "DANGEROUS" ? (
+        <p className="text-xs text-red-500">
+          Classified DANGEROUS — this pipeline never allows applying it. Review and fix manually.
+        </p>
+      ) : (
+        <>
+          <FixDiffViewer path={fix.filePath} original={fix.originalContent} modified={fix.patchedContent} />
+          {fix.status === "proposed" && (
+            <div className="flex gap-2">
+              <Button size="sm" onClick={() => onDecision("approved")}>
+                <CheckCircle2 className="h-4 w-4" />
+                Approve
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => onDecision("rejected")}>
+                <XCircle className="h-4 w-4" />
+                Reject
+              </Button>
+            </div>
+          )}
+          {fix.status === "approved" && (
+            <p className="text-xs text-emerald-500">
+              Approved — run <code>ai-qa-agent apply-fixes</code> locally to apply it and run the regression suite.
+            </p>
+          )}
+          {fix.status === "applied" && <p className="text-xs text-emerald-500">Applied — regression suite passed.</p>}
+          {fix.status === "regression_failed" && (
+            <p className="text-xs text-red-500">Applied, but the regression suite failed afterward — review needed.</p>
+          )}
+        </>
+      )}
+    </div>
   );
 }
 
