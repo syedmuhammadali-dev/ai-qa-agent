@@ -1,0 +1,21 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Evidence (screenshots) is written exclusively by the server (Admin SDK,
+    // which bypasses these rules) after the project owner explicitly opts in
+    // via project.evidenceUploadEnabled — see /api/projects/[id]/evidence/upload.
+    // The owner's uid lives directly in the path (no Firestore cross-service
+    // lookup — that path was tried first and found to be unreliable even in
+    // the local emulator, so this is deliberately simpler and self-contained).
+    match /users/{uid}/projects/{projectId}/evidence/{allPaths=**} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // Deny everything else by default.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

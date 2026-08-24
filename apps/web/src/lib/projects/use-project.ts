@@ -27,13 +27,14 @@ export function useProject(projectId: string) {
             backendUrl: data.backendUrl,
             status: data.status ?? "not_configured",
             permissionMode: data.permissionMode ?? "manual",
+            evidenceUploadEnabled: data.evidenceUploadEnabled ?? false,
             createdAt: toMillis(data.createdAt),
             updatedAt: toMillis(data.updatedAt),
           });
         }
         setLoading(false);
       },
-      () => setLoading(false)
+      () => setLoading(false),
     );
     return unsubscribe;
   }, [projectId]);

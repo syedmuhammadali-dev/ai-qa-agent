@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { XtermView } from "@/components/terminal/xterm-view";
 import { FixDiffViewer } from "@/components/code/fix-diff-viewer";
+import { EvidenceGallery } from "@/components/layout/evidence-gallery";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useCommands } from "@/lib/commands/use-commands";
 import { useRuns } from "@/lib/runs/use-runs";
@@ -187,6 +188,7 @@ function RunCard({ projectId, run, defaultOpen }: { projectId: string; run: RunR
       {expanded && (
         <CardContent className="flex flex-col gap-3">
           <XtermView log={run.log} className="h-64 w-full rounded-md border border-border bg-black/90 p-1" />
+          {run.evidencePaths && run.evidencePaths.length > 0 && <EvidenceGallery paths={run.evidencePaths} />}
           {run.status === "failed" && (
             <div className="flex flex-col gap-2">
               {!diagnosis && (

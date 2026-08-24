@@ -11,6 +11,8 @@ export interface Project {
   backendUrl?: string;
   status: ProjectStatus;
   permissionMode: PermissionMode;
+  /** Opt-in only — evidence (screenshots) stays local by default. */
+  evidenceUploadEnabled: boolean;
   createdAt: number;
   updatedAt: number;
 }

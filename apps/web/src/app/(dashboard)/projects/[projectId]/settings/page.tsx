@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -59,6 +60,7 @@ export default function SettingsPage({ params }: { params: Promise<{ projectId: 
     <div className="mx-auto flex max-w-2xl flex-col gap-6 p-6">
       <ConnectionsCard key={project.id} project={project} />
       <LocalAgentCard key={`${project.id}-agent`} project={project} />
+      <EvidenceCard key={`${project.id}-evidence`} project={project} />
       <AiProviderCard key={config?.provider ?? "unset"} config={config} onSave={save} />
     </div>
   );
@@ -275,6 +277,45 @@ function LocalAgentCard({ project }: { project: Project }) {
               ))}
             </div>
           )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function EvidenceCard({ project }: { project: Project }) {
+  const [enabled, setEnabled] = useState(project.evidenceUploadEnabled);
+  const [saving, setSaving] = useState(false);
+
+  async function handleToggle(next: boolean) {
+    if (!db) return;
+    setEnabled(next);
+    setSaving(true);
+    try {
+      await updateDoc(doc(db, "projects", project.id), { evidenceUploadEnabled: next, updatedAt: new Date() });
+      toast.success(next ? "Cloud evidence upload enabled" : "Cloud evidence upload disabled");
+    } catch (err) {
+      setEnabled(!next);
+      toast.error(err instanceof Error ? err.message : "Failed to update");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Evidence</CardTitle>
+        <CardDescription>
+          Screenshots stay local on your machine by default. Turn this on only if you want them
+          also uploaded to Firebase Storage so they&apos;re viewable from this dashboard — off by
+          default, and the server enforces this even if a local agent tries to upload anyway.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="evidence-upload">Upload screenshots to the cloud</Label>
+          <Switch id="evidence-upload" checked={enabled} onCheckedChange={handleToggle} disabled={saving} />
         </div>
       </CardContent>
     </Card>

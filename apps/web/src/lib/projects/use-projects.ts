@@ -27,7 +27,7 @@ export function useProjects() {
     const q = query(
       collection(db, "projects"),
       where("ownerId", "==", user.uid),
-      orderBy("createdAt", "desc")
+      orderBy("createdAt", "desc"),
     );
     const unsubscribe = onSnapshot(
       q,
@@ -44,14 +44,15 @@ export function useProjects() {
               backendUrl: data.backendUrl,
               status: data.status ?? "not_configured",
               permissionMode: data.permissionMode ?? "manual",
+              evidenceUploadEnabled: data.evidenceUploadEnabled ?? false,
               createdAt: toMillis(data.createdAt),
               updatedAt: toMillis(data.updatedAt),
             } satisfies Project;
-          })
+          }),
         );
         setLoading(false);
       },
-      () => setLoading(false)
+      () => setLoading(false),
     );
     return unsubscribe;
   }, [user]);
@@ -63,6 +64,7 @@ export function useProjects() {
       ownerId: user.uid,
       status: "not_configured",
       permissionMode: "manual",
+      evidenceUploadEnabled: false,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });

@@ -1,4 +1,8 @@
-import type { PermissionMode, PolicyDecision, RiskLevel } from "@ai-qa-agent/command-policy";
+import type {
+  PermissionMode,
+  PolicyDecision,
+  RiskLevel,
+} from "@ai-qa-agent/command-policy";
 
 /** Returned by POST /api/local-agent/exchange after a pairing code is redeemed. */
 export interface LocalAgentSession {
@@ -42,7 +46,12 @@ export interface RunDiagnosis {
   generatedAt: number;
 }
 
-export type FixStatus = "proposed" | "approved" | "rejected" | "applied" | "regression_failed";
+export type FixStatus =
+  | "proposed"
+  | "approved"
+  | "rejected"
+  | "applied"
+  | "regression_failed";
 export type FixSafety = "SAFE" | "REVIEW_REQUIRED" | "DANGEROUS";
 
 export interface FixProposal {
@@ -77,4 +86,7 @@ export interface RunRecord {
   log: string;
   diagnosis?: RunDiagnosis;
   fix?: FixProposal;
+  /** Firebase Storage paths — only present if the project opted into cloud
+   * evidence upload; local screenshots are the default and stay local. */
+  evidencePaths?: string[];
 }

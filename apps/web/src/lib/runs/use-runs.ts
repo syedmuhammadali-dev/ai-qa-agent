@@ -1,6 +1,12 @@
 "use client";
 
-import { collection, limit, onSnapshot, orderBy, query } from "firebase/firestore";
+import {
+  collection,
+  limit,
+  onSnapshot,
+  orderBy,
+  query,
+} from "firebase/firestore";
 import { useEffect, useState } from "react";
 import type { RunRecord } from "@ai-qa-agent/agent-core";
 import { db } from "@/lib/firebase/client";
@@ -11,7 +17,11 @@ export function useRuns(projectId: string) {
 
   useEffect(() => {
     if (!db || !projectId) return;
-    const q = query(collection(db, "projects", projectId, "runs"), orderBy("startedAt", "desc"), limit(50));
+    const q = query(
+      collection(db, "projects", projectId, "runs"),
+      orderBy("startedAt", "desc"),
+      limit(50),
+    );
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
@@ -29,12 +39,13 @@ export function useRuns(projectId: string) {
               log: data.log ?? "",
               diagnosis: data.diagnosis,
               fix: data.fix,
+              evidencePaths: data.evidencePaths,
             } satisfies RunRecord;
-          })
+          }),
         );
         setLoading(false);
       },
-      () => setLoading(false)
+      () => setLoading(false),
     );
     return unsubscribe;
   }, [projectId]);
