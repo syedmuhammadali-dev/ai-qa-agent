@@ -113,8 +113,16 @@ specified bucket does not exist." Root cause: Firebase Storage had never been en
 Firebase Console for this project (Storage requires a one-time manual "Get Started" click to
 provision the actual bucket; unlike Firestore, it isn't auto-created). This is an infrastructure
 gap, not a code bug — the local screenshot still saved correctly and the CLI reported the upload
-failure clearly rather than crashing or silently dropping it. Live upload verification is pending
-the user enabling Storage in the console.
+failure clearly rather than crashing or silently dropping it.
+
+**Permanently deferred (2026-08-25)**: the project owner is on Firebase's free Spark plan and does
+not want to move to Blaze (pay-as-you-go), and Google requires Blaze billing to provision a new
+Storage bucket at all — this isn't a one-time console click, it's a billing-tier requirement.
+Live cloud-upload verification is therefore not achievable in this environment and is accepted as
+a documented, permanent limitation rather than a blocker: the feature is opt-in and defaults to
+off, so no user is affected by leaving it unverified live. Code correctness is covered by the 4
+Storage rules-unit tests against the real local emulator; the local-first screenshot path (the
+default, always-on behavior) is unaffected and fully live-verified.
 
 Also found and fixed a real bug along the way: the Storage Rules cross-service `firestore.get()`
 call (checking project ownership via Firestore from within a Storage rule) returned a real
