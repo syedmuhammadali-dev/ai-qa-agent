@@ -165,9 +165,9 @@ node-api` — confirmed the corrected file was actually written to disk, then a 
 regression ran and *honestly failed* (Jest isn't installed in the fixture) and was reported as
 `regression_failed` with the real exit code, not silently marked applied. Separately confirmed
 live that approving a DANGEROUS-classified fix is rejected by the API itself (403), not just
-hidden by the UI. The fixture's stray `index.js` was removed afterward to keep it clean; a couple
-of Firestore documents from this manual test remain (the orphaned-subcollection issue noted in
-Phase 6 — cleanup was interrupted this pass and not re-run without checking first).
+hidden by the UI. The fixture's stray `index.js` was removed afterward to keep it clean. The 3
+orphaned Firestore documents from this manual test were swept and deleted afterward (confirmed
+0 remaining in `runs`/`commands`/`sessions`/`ai-config`/`projects`).
 
 `pnpm typecheck / lint / build / test / test:rules` all pass — 111 unit tests (up from 98),
 10 Firestore rules tests.
