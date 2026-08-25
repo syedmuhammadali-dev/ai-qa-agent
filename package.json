@@ -24,6 +24,7 @@
     "@ai-qa-agent/command-policy": "workspace:*",
     "@ai-qa-agent/project-analyzer": "workspace:*",
     "@ai-qa-agent/qa-engine": "workspace:*",
+    "@ai-qa-agent/report-generator": "workspace:*",
     "@ai-qa-agent/security-engine": "workspace:*",
     "@firebase/rules-unit-testing": "^5.0.2",
     "firebase": "^12.18.0",

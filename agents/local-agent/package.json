@@ -18,9 +18,11 @@
     "@ai-qa-agent/project-analyzer": "workspace:*",
     "@ai-qa-agent/qa-engine": "workspace:*",
     "@ai-qa-agent/security-engine": "workspace:*",
+    "archiver": "^8.0.0",
     "commander": "^12.1.0"
   },
   "devDependencies": {
+    "@types/archiver": "^8.0.0",
     "@types/node": "^20",
     "typescript": "^5"
   }

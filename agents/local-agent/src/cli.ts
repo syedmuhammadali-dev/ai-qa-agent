@@ -45,6 +45,7 @@ import {
 } from "./api.ts";
 import { runCommandThroughPolicy } from "./run-through-policy.ts";
 import { runCommand } from "./exec.ts";
+import { exportProjectZip } from "./export-zip.ts";
 
 const program = new Command();
 program
@@ -838,6 +839,70 @@ program
     }
 
     process.exitCode = anyFailed ? 1 : 0;
+  });
+
+program
+  .command("export-zip")
+  .description(
+    "Export a clean, verified zip of the real project: secret scan -> cleanup -> validate -> README -> integrity checksum",
+  )
+  .option("--cwd <dir>", "Project directory", process.cwd())
+  .option("--out <dir>", "Output directory", ".ai-qa/exports")
+  .action(async (opts: { cwd: string; out: string }) => {
+    const session = requireSession();
+    const start = Date.now();
+    const outDir = join(opts.cwd, opts.out);
+
+    console.log("\nRunning secret scan before export...");
+    const result = await exportProjectZip(opts.cwd, outDir);
+    const durationMs = Date.now() - start;
+
+    if (!result.ok) {
+      console.error(`\nExport refused: ${result.reason}`);
+      if (result.secretFindings) {
+        for (const f of result.secretFindings) {
+          console.error(`  [${f.severity}] ${f.problem} (${f.evidence})`);
+        }
+      }
+      await submitCommandAudit(session.apiUrl, session.sessionToken, session.projectId, {
+        command: `export-zip --cwd ${opts.cwd}`,
+        reason: "Export project as a verified zip",
+        risk: "read",
+        category: "export",
+        decision: "auto_allow",
+        permissionMode: "auto_safe",
+        approved: true,
+        exitCode: 1,
+        durationMs,
+        outputHash: hashOutput(result.reason ?? "", ""),
+        stdoutPreview: "",
+        stderrPreview: previewOutput(result.reason ?? ""),
+      }).catch((err) => console.error(`(failed to record audit entry: ${err.message})`));
+      process.exitCode = 1;
+      return;
+    }
+
+    console.log(`\nExported ${result.fileCount} files to ${result.zipPath}`);
+    console.log(`Checksum written to ${result.checksumPath}`);
+    console.log("Integrity verified: re-hashing the written zip matched the recorded checksum.");
+
+    const summary = `Exported ${result.fileCount} files -> ${result.zipPath}\nChecksum: ${result.checksumPath}`;
+    await submitCommandAudit(session.apiUrl, session.sessionToken, session.projectId, {
+      command: `export-zip --cwd ${opts.cwd}`,
+      reason: "Export project as a verified zip",
+      risk: "read",
+      category: "export",
+      decision: "auto_allow",
+      permissionMode: "auto_safe",
+      approved: true,
+      exitCode: 0,
+      durationMs,
+      outputHash: hashOutput(summary, ""),
+      stdoutPreview: previewOutput(summary),
+      stderrPreview: "",
+    }).catch((err) => console.error(`(failed to record audit entry: ${err.message})`));
+
+    process.exitCode = 0;
   });
 
 program.parseAsync(process.argv).catch((err) => {

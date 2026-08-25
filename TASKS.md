@@ -243,7 +243,48 @@ the new blocked-branch classification, including two existing test cases that mo
 `high`/`critical` to `blocked` now that pushing directly to main/master is refused outright rather
 than merely flagged high-risk).
 
-## Phase 9 — Reports — TODO
+## Phase 9 — Reports — DONE (2026-08-25)
+
+| ID   | Title                                                                    | Status | Verification                                                                                                                                                                                                                                                                                                                                                                                              |
+| ---- | ------------------------------------------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T9.1 | Report generator (HTML/Markdown/PDF/JSON), the 6 real statuses           | DONE   | New `packages/report-generator`: pure `computeReadinessReport` + `renderMarkdownReport`/`renderHtmlReport`, 12 unit tests. `GET /api/projects/[id]/report` (`?format=json\|markdown\|html`) assembles categories from *real* Firestore command-audit/run history — no format ever exists as a separate, divergent code path, all three render the same computed `ProductionReadinessReport`. New "Findings" dashboard page replaces the Phase-1 placeholder: generate, view, download. PDF was deliberately not added as a 4th format — see note below. |
+| T9.2 | Transparent production-readiness score, per-category calculation shown  | DONE   | `overallScore = sum(category.score × category.weight) / sum(category.weight)`, counting only categories that actually ran (PASS/FAIL/BLOCKED) — the exact formula string ships *on the report object itself* (`scoreFormula`), not just in docs, and is rendered on every format. NOT_RUN/SKIPPED/REQUIRES_HUMAN_REVIEW categories are excluded from both sides of the fraction and listed in `excludedFromScore`, so omission can never inflate the number — enforced by a unit test that a report with one passing category and three excluded ones scores exactly 100 for that one category, not 25 for "4 categories, 1 passing". |
+| T9.3 | ZIP export: secret scan → cleanup → validate → README → integrity check | DONE   | `ai-qa-agent export-zip`: (1) real `scanForSecurityFindings` (reused from Phase 6) is a hard gate — any critical/high secret finding refuses the export outright; (2) file list built from the same `FileProvider` used for real project analysis (already excludes node_modules/.git/build output), further filtered against a credential-shaped-filename regex; (3) validation re-checks the *actual* entries `archiver` reported writing (not just the intended list) against that same regex; (4) a real `AI_QA_AGENT_EXPORT.md` is generated from the project's real detected stack and written into the zip; (5) sha256 checksum written alongside, then the zip is re-hashed from disk to confirm the write wasn't corrupted. |
+
+**Why no PDF format**: architecturally, all real execution (including spawning a browser) happens
+in the local agent, never in the Vercel/serverless-style dashboard — the same rule that keeps
+Playwright checks (Phase 4/6) local-only. A PDF would need a headless-browser render step, which
+belongs in the CLI, not an API route. Given the JSON/Markdown/HTML formats already cover every
+real use case (dashboard viewing, downloadable docs, and CI-consumable JSON) and Markdown/HTML both
+print cleanly from a browser's own "Print to PDF", a dedicated PDF renderer was judged not worth
+the added Playwright-in-the-report-path complexity for this iteration — noted here rather than
+silently dropped.
+
+Live verification, two parts:
+
+1. **`export-zip`**, tested for real (not mocked) against two real fixture projects: run against
+   `fixtures/sample-projects/security-app` (which deliberately contains a planted secret from
+   Phase 6's fixture work) — correctly refused with the exact real finding printed, no zip written;
+   run against `fixtures/sample-projects/node-api` (clean) — produced a real zip file on disk,
+   confirmed by reading it back and checking the real `PK` zip magic bytes, and independently
+   re-computed its sha256 from the raw bytes to confirm it matches the checksum file the CLI wrote
+   (not just trusting the CLI's own report of success). Also caught a real bug before it shipped:
+   `@types/archiver@8`'s declarations dropped the classic `archiver(format, options)` factory
+   function in favor of `new archiver.ZipArchive(options)` — confirmed against the actual installed
+   package's runtime exports (`Object.keys(require("archiver"))`) that the types and the real
+   runtime agree, not just that TypeScript stopped complaining.
+2. **Report API**, 15 live assertions against the running dev server + real Firestore/Auth test
+   user: a project with zero command history correctly reports every category NOT_RUN and a null
+   score (never a fabricated PASS); seeding two real command-audit docs (a passing test run, a
+   failing security scan) plus one run with an applied fix and a pushed release correctly flips
+   exactly those categories and computes a real weighted score (75, matching 3 PASS + 1 FAIL over 4
+   equally-weighted counted categories); Markdown and HTML formats both return the correct
+   content-type and contain the real project name and category data; an unauthenticated request is
+   correctly rejected with 401. All test data (user, project, 2 command docs, 1 run doc) cleaned up,
+   0 orphaned docs confirmed afterward.
+
+`pnpm typecheck / lint / build / test` all pass — 128 unit tests (up from 116: 8 new for
+`computeReadinessReport`'s scoring rules, 4 new for the Markdown/HTML renderers).
 
 ## Phase 10 — Self Testing — TODO
 
