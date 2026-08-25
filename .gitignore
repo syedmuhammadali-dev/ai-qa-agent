@@ -25,6 +25,7 @@ coverage/
 playwright-report/
 test-results/
 .ai-qa/
+.ai-qa-test-tmp/
 
 # Firebase
 .firebase/

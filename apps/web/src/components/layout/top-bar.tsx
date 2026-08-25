@@ -20,6 +20,7 @@ export function TopBar() {
 
   return (
     <header className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4">
+      <h1 className="sr-only">AI QA Agent</h1>
       <Link href="/dashboard" className="text-sm font-semibold tracking-tight">
         AI QA Agent
       </Link>

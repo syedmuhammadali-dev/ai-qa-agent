@@ -44,7 +44,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+    <main className="flex min-h-screen items-center justify-center bg-background p-4">
+      <h1 className="sr-only">Log in to AI QA Agent</h1>
       <div className="flex flex-col items-center gap-6">
         {!isFirebaseConfigured && <FirebaseNotConfigured />}
         <Card className="w-full max-w-sm">
@@ -89,6 +90,6 @@ export default function LoginPage() {
           </CardFooter>
         </Card>
       </div>
-    </div>
+    </main>
   );
 }

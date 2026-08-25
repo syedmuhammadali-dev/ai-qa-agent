@@ -59,8 +59,14 @@ export function useProjects() {
 
   async function createProject(input: NewProjectInput) {
     if (!db || !user) throw new Error("Not authenticated");
+    // Firestore's client SDK rejects a literal `undefined` field value, so
+    // optional fields left blank must be omitted entirely, not spread as
+    // `undefined` — the same class of bug fixed for ai-config's baseUrl.
     await addDoc(collection(db, "projects"), {
-      ...input,
+      name: input.name,
+      ...(input.githubRepoUrl ? { githubRepoUrl: input.githubRepoUrl } : {}),
+      ...(input.frontendUrl ? { frontendUrl: input.frontendUrl } : {}),
+      ...(input.backendUrl ? { backendUrl: input.backendUrl } : {}),
       ownerId: user.uid,
       status: "not_configured",
       permissionMode: "manual",

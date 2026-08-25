@@ -6,7 +6,7 @@ export default function DashboardGroupLayout({ children }: { children: React.Rea
     <Protected>
       <div className="flex min-h-screen flex-col">
         <TopBar />
-        <div className="flex-1">{children}</div>
+        <main className="flex-1">{children}</main>
       </div>
     </Protected>
   );

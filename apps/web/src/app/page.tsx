@@ -28,6 +28,7 @@ export default function RootPage() {
 
   return (
     <main className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
+      <h1 className="sr-only">AI QA Agent</h1>
       Loading…
     </main>
   );

@@ -13,7 +13,11 @@
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
     "test": "vitest run tests/unit",
-    "test:rules": "vitest run tests/integration/firestore-rules tests/integration/storage-rules"
+    "test:integration": "vitest run tests/integration/export-zip",
+    "test:rules": "vitest run tests/integration/firestore-rules tests/integration/storage-rules",
+    "test:visual": "playwright test",
+    "test:visual:update": "playwright test --update-snapshots",
+    "test:e2e": "playwright test --config=playwright.e2e.config.ts"
   },
   "devDependencies": {
     "@ai-qa-agent/agent-core": "workspace:*",
@@ -22,12 +26,15 @@
     "@ai-qa-agent/browser-agent": "workspace:*",
     "@ai-qa-agent/code-analyzer": "workspace:*",
     "@ai-qa-agent/command-policy": "workspace:*",
+    "@ai-qa-agent/github": "workspace:*",
     "@ai-qa-agent/project-analyzer": "workspace:*",
     "@ai-qa-agent/qa-engine": "workspace:*",
     "@ai-qa-agent/report-generator": "workspace:*",
     "@ai-qa-agent/security-engine": "workspace:*",
     "@firebase/rules-unit-testing": "^5.0.2",
+    "@playwright/test": "^1.62.1",
     "firebase": "^12.18.0",
+    "firebase-admin": "^14.3.0",
     "firebase-tools": "^13.35.1",
     "vitest": "^4.1.11"
   }
