@@ -33,6 +33,8 @@ const RULES: Record<Exclude<RiskLevel, "read">, Rule[]> = {
     { test: /\b(sudo|runas)\b|Start-Process\s+.*-Verb\s+RunAs/i, category: "privilege-escalation", reason: "Attempts to run as an elevated/different user." },
     { test: /\bsu\s+-/i, category: "privilege-escalation", reason: "Switches to another user account." },
     { test: /\bcrontab\s+-e\b|\bschtasks\s+\/create\b|New-ScheduledTask|launchctl\s+load/i, category: "persistence", reason: "Installs a scheduled task or cron job (persistence mechanism)." },
+    { test: /git\s+(checkout\s+-b|branch)\s+(main|master)\b/i, category: "protected-branch", reason: "Refuses to create a branch named main/master — release branches must never overwrite the protected default branch." },
+    { test: /git\s+push\b.*\b(main|master)\b/i, category: "protected-branch", reason: "Refuses to push directly to main/master." },
   ],
   critical: [
     { test: /git\s+push\s+.*(--force|-f)\b/i, category: "production", reason: "Force-pushes, which can overwrite remote history." },

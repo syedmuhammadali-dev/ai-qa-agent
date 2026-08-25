@@ -4,6 +4,7 @@ import type {
   GitHubCompareResult,
   GitHubFileContent,
   GitHubIdentity,
+  GitHubPullRequest,
   GitHubRepo,
   GitHubTreeEntry,
 } from "./types";
@@ -38,15 +39,25 @@ export interface GitHubClient {
     base: string,
     head: string,
   ): Promise<GitHubCompareResult>;
+  createPullRequest(
+    owner: string,
+    repo: string,
+    base: string,
+    head: string,
+    title: string,
+    body: string,
+  ): Promise<GitHubPullRequest>;
 }
 
 export function createGitHubClient(accessToken: string): GitHubClient {
-  async function request<T>(path: string): Promise<T> {
+  async function request<T>(path: string, init?: RequestInit): Promise<T> {
     const res = await fetch(`${API_BASE}${path}`, {
+      ...init,
       headers: {
         Authorization: `Bearer ${accessToken}`,
         Accept: "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
+        ...(init?.body ? { "Content-Type": "application/json" } : {}),
       },
     });
     if (!res.ok) {
@@ -207,6 +218,17 @@ export function createGitHubClient(accessToken: string): GitHubClient {
         totalCommits: data.total_commits,
         files,
       };
+    },
+
+    async createPullRequest(owner, repo, base, head, title, body) {
+      const data = await request<{ number: number; html_url: string; state: string }>(
+        `/repos/${owner}/${repo}/pulls`,
+        {
+          method: "POST",
+          body: JSON.stringify({ title, head, base, body }),
+        },
+      );
+      return { number: data.number, htmlUrl: data.html_url, state: data.state };
     },
   };
 }

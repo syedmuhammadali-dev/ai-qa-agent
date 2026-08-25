@@ -47,7 +47,7 @@ describe("classifyCommand", () => {
     ["rmdir /s /q build", "high"],
     ["git reset --hard HEAD~1", "high"],
     ["git clean -fd", "high"],
-    ["git push origin main", "high"],
+    ["git push origin feature/x", "high"],
     ["pnpm remove lodash", "high"],
     ["chmod -R 777 .", "high"],
     ["kill -9 1234", "high"],
@@ -56,8 +56,8 @@ describe("classifyCommand", () => {
   });
 
   it.each([
-    ["git push --force origin main", "critical"],
-    ["git push -f origin main", "critical"],
+    ["git push --force origin feature/x", "critical"],
+    ["git push -f origin feature/x", "critical"],
     ["vercel --prod", "critical"],
     ["firebase deploy", "critical"],
     ["DROP TABLE users;", "critical"],
@@ -78,6 +78,11 @@ describe("classifyCommand", () => {
     ["reg add HKLM\\Software\\Foo", "blocked"],
     ["sudo rm -rf /var", "blocked"],
     ["crontab -e", "blocked"],
+    ["git push origin main", "blocked"],
+    ["git push origin master", "blocked"],
+    ["git push --force origin main", "blocked"],
+    ["git checkout -b main", "blocked"],
+    ["git branch master", "blocked"],
   ])("%s -> %s", (command, risk) => {
     expect(classifyCommand(command).risk).toBe(risk);
   });

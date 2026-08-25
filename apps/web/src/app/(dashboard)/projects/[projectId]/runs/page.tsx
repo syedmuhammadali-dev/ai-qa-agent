@@ -2,7 +2,16 @@
 
 import { use, useState } from "react";
 import { toast } from "sonner";
-import { CheckCircle2, History, Sparkles, Terminal as TerminalIcon, Wrench, XCircle } from "lucide-react";
+import {
+  CheckCircle2,
+  ExternalLink,
+  GitBranch,
+  History,
+  Sparkles,
+  Terminal as TerminalIcon,
+  Wrench,
+  XCircle,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
@@ -14,7 +23,7 @@ import { EvidenceGallery } from "@/components/layout/evidence-gallery";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useCommands } from "@/lib/commands/use-commands";
 import { useRuns } from "@/lib/runs/use-runs";
-import type { CommandAuditRecord, FixProposal, RunRecord } from "@ai-qa-agent/agent-core";
+import type { CommandAuditRecord, FixProposal, ReleasePlan, RunRecord } from "@ai-qa-agent/agent-core";
 
 const RISK_VARIANT: Record<string, string> = {
   read: "text-muted-foreground",
@@ -108,6 +117,8 @@ function RunCard({ projectId, run, defaultOpen }: { projectId: string; run: RunR
   const [diagnosis, setDiagnosis] = useState(run.diagnosis);
   const [proposingFix, setProposingFix] = useState(false);
   const [fix, setFix] = useState(run.fix);
+  const [planningRelease, setPlanningRelease] = useState(false);
+  const [release, setRelease] = useState(run.release);
 
   async function handleDiagnose() {
     if (!user) return;
@@ -160,6 +171,45 @@ function RunCard({ projectId, run, defaultOpen }: { projectId: string; run: RunR
       if (!res.ok) throw new Error(data.error ?? "Failed to record decision");
       setFix((prev) => (prev ? { ...prev, status: decision } : prev));
       toast.success(decision === "approved" ? "Approved — run `ai-qa-agent apply-fixes` to apply it" : "Rejected");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to record decision");
+    }
+  }
+
+  async function handlePlanRelease() {
+    if (!user) return;
+    setPlanningRelease(true);
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch(`/api/projects/${projectId}/runs/${run.id}/release-plan`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Failed to plan release");
+      setRelease(data.release);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to plan release");
+    } finally {
+      setPlanningRelease(false);
+    }
+  }
+
+  async function handleReleaseDecision(decision: "confirmed" | "rejected") {
+    if (!user) return;
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch(`/api/projects/${projectId}/runs/${run.id}/release-decision`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ decision }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Failed to record decision");
+      setRelease((prev) => (prev ? { ...prev, status: decision } : prev));
+      toast.success(
+        decision === "confirmed" ? "Confirmed — run `ai-qa-agent push-release` to push it" : "Rejected",
+      );
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to record decision");
     }
@@ -230,6 +280,23 @@ function RunCard({ projectId, run, defaultOpen }: { projectId: string; run: RunR
                 </Button>
               )}
               {fix && <FixSection fix={fix} onDecision={handleFixDecision} />}
+              {fix?.status === "applied" &&
+                (!release || release.status === "rejected" || release.status === "failed") && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-fit"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handlePlanRelease();
+                  }}
+                  disabled={planningRelease}
+                >
+                  <GitBranch className="h-4 w-4" />
+                  {planningRelease ? "Planning release..." : "Plan Release"}
+                </Button>
+              )}
+              {release && <ReleaseSection release={release} onDecision={handleReleaseDecision} />}
             </div>
           )}
         </CardContent>
@@ -287,6 +354,92 @@ function FixSection({ fix, onDecision }: { fix: FixProposal; onDecision: (decisi
             <p className="text-xs text-red-500">Applied, but the regression suite failed afterward — review needed.</p>
           )}
         </>
+      )}
+    </div>
+  );
+}
+
+const RELEASE_STATUS_VARIANT: Record<ReleasePlan["status"], string> = {
+  pending: "text-muted-foreground",
+  confirmed: "text-amber-500 border-amber-500/40",
+  rejected: "text-red-500 border-red-500/40",
+  pushed: "text-emerald-500 border-emerald-500/40",
+  failed: "text-red-500 border-red-500/40",
+};
+
+function ReleaseSection({
+  release,
+  onDecision,
+}: {
+  release: ReleasePlan;
+  onDecision: (decision: "confirmed" | "rejected") => void;
+}) {
+  return (
+    <div className="flex flex-col gap-2 rounded-md border border-border p-3" onClick={(e) => e.stopPropagation()}>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <GitBranch className="h-4 w-4 text-muted-foreground" />
+          <code className="text-xs">
+            {release.branchName} → {release.baseBranch}
+          </code>
+          <Badge variant="outline" className={RELEASE_STATUS_VARIANT[release.status]}>
+            {release.status}
+          </Badge>
+        </div>
+      </div>
+      <p className="text-xs text-muted-foreground">{release.commitMessage}</p>
+      <div className="grid gap-1 text-xs text-muted-foreground sm:grid-cols-2">
+        <p>
+          <span className="text-foreground">Files:</span> {release.changedFiles.join(", ")}
+        </p>
+        <p>
+          <span className="text-foreground">Tests:</span> {release.testsSummary}
+        </p>
+        <p className="sm:col-span-2">
+          <span className="text-foreground">Findings:</span> {release.findingsSummary}
+        </p>
+      </div>
+      <div className="rounded-md border border-border bg-muted/30 p-2 text-xs">
+        <p className="mb-1 text-muted-foreground">AI explanation</p>
+        <p className="whitespace-pre-wrap">{release.aiExplanation}</p>
+      </div>
+
+      {release.status === "pending" && (
+        <div className="flex gap-2">
+          <Button size="sm" onClick={() => onDecision("confirmed")}>
+            <CheckCircle2 className="h-4 w-4" />
+            Confirm & Push
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => onDecision("rejected")}>
+            <XCircle className="h-4 w-4" />
+            Reject
+          </Button>
+        </div>
+      )}
+      {release.status === "confirmed" && (
+        <p className="text-xs text-amber-500">
+          Confirmed — run <code>ai-qa-agent push-release</code> locally to create the real branch, commit
+          (as &quot;AI QA Agent&quot;, never impersonating you), push, and open a pull request. Never targets
+          main/master.
+        </p>
+      )}
+      {release.status === "pushed" && (
+        <div className="flex flex-col gap-1 text-xs text-emerald-500">
+          <p>Pushed{release.commitSha ? ` (${release.commitSha.slice(0, 7)})` : ""}.</p>
+          {release.prUrl && (
+            <a
+              href={release.prUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="flex w-fit items-center gap-1 underline"
+            >
+              View pull request <ExternalLink className="h-3 w-3" />
+            </a>
+          )}
+        </div>
+      )}
+      {release.status === "failed" && (
+        <p className="text-xs text-red-500">Failed: {release.failureReason ?? "Unknown failure"}</p>
       )}
     </div>
   );

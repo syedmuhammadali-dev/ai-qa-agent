@@ -196,7 +196,52 @@ orphaned Firestore documents from this manual test were swept and deleted afterw
 `pnpm typecheck / lint / build / test / test:rules` all pass — 111 unit tests (up from 98),
 10 Firestore rules tests.
 
-## Phase 8 — GitHub Release — TODO
+## Phase 8 — GitHub Release — DONE (2026-08-25)
+
+| ID   | Title                                                                        | Status | Verification                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| ---- | ----------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| T8.1 | Branch creation (never main/master)                                          | DONE   | `ai-qa-agent push-release` runs a real `git checkout -b <branch>` through the existing command-policy pipeline. Branch names are always machine-generated (`ai-qa-agent/<file-slug>-<timestamp>`), never user-typed. Enforced at three independent layers: (1) `command-policy` now `blocked`-classifies `git checkout -b main/master`, `git branch main/master`, and any `git push ... main/master` outright — checked *before* the generic push/branch rules so it wins; (2) the `release-plan`/`release-decision` API routes reject a protected branch name server-side; (3) the CLI itself calls `isProtectedBranch()` before running anything. |
+| T8.2 | Commit + push under transparent machine identity                            | DONE   | Commits are made with `git -c user.name="AI QA Agent" -c user.email="ai-qa-agent@users.noreply.github.com" commit -m ...` — scoped to that one commit via `-c`, never touching the developer's global git config. Verified for real against a scratch bare repo (see below): `git log -1 --format='%an <%ae>'` on the resulting commit prints exactly `AI QA Agent <ai-qa-agent@users.noreply.github.com>`, and the branch was confirmed present on the (scratch) remote via `git ls-remote`.                    |
+| T8.3 | Pre-push confirmation screen (files, diff, tests, findings, AI explanation) | DONE   | New "Plan Release" step on the Runs page (only available once a fix reaches `applied`, i.e. already passed regression per Phase 7): shows the real branch/base names, real changed file list, a real tests summary (from the actual regression run), a findings summary (the real failing command + exit code it fixes), and the AI's own explanation — with explicit Confirm/Reject buttons. Nothing is pushed until the human clicks Confirm; the CLI only ever picks up plans already in `confirmed` status.       |
+
+New pieces: `packages/agent-core`'s `ReleasePlan`/`ReleaseStatus`/`PendingRelease`/`MACHINE_COMMITTER`/
+`isProtectedBranch`; `packages/github`'s `createPullRequest` (POST `/repos/{o}/{r}/pulls`, the client's
+`request()` helper gained method/body support since it was GET-only before); four new API routes —
+`runs/[id]/release-plan` (dashboard auth, generates the plan from an applied fix), `runs/[id]/
+release-decision` (dashboard auth, confirm/reject, re-validates the protected-branch guard),
+`releases/pending` (local-agent auth, mirrors `fixes/pending`), `runs/[id]/release-pushed`
+(local-agent auth, records success/failure and opens the real PR via the project owner's stored
+GitHub OAuth token — gracefully records `pushed` with no `prUrl` if GitHub isn't connected, rather
+than erroring, since the branch/commit/push already happened and that's the part that matters);
+`ai-qa-agent push-release` CLI command composing four `runCommandThroughPolicy` calls (checkout -b,
+add, commit, push) followed by a plain `git rev-parse HEAD` to capture the real commit sha.
+
+Live verification, two parts:
+
+1. **Real git mechanics** (not mocked): built a scratch bare repo as a stand-in remote, ran the
+   *exact* command strings `push-release` generates (`git checkout -b ai-qa-agent/readme-fix-...`,
+   `git add "README.md"`, the scoped `-c user.name=... -c user.email=...` commit, `git push origin
+   <branch>`), then confirmed for real: the commit's author is `AI QA Agent <ai-qa-agent@users.
+   noreply.github.com>` (not the local git identity), and `git ls-remote --heads origin` shows the
+   branch really exists on the remote.
+2. **Real API pipeline**: real dev server, real Firebase Auth test user, real Firestore project —
+   13 assertions against the actual running routes, not unit-level mocks: `release-plan` correctly
+   400s with no applied fix and 409s with GitHub not connected; confirming a release targeting
+   `main` is correctly 403'd; a legitimate release confirms, appears in `releases/pending` for the
+   local agent, and reaches `pushed` in Firestore with the real commit sha recorded; attempting to
+   push a release that isn't `confirmed` yet is correctly 400'd; the failure path correctly records
+   `failureReason`; and — the one deliberately-exercised edge case — reporting a successful push
+   with no GitHub OAuth token stored for the owner does *not* error, it just skips PR creation and
+   still marks the release `pushed` (the git side effects already happened; the PR is a bonus, not
+   a requirement). Could not drive a fully live PR creation (same GitHub OAuth human-consent
+   limitation as Phases 2/6/7), so this is the same "insert realistic state via Admin SDK, drive
+   the rest through real APIs" pattern used in Phase 7. All test data (user, project, 5 run docs, 1
+   local-agent session doc) cleaned up and confirmed zero orphaned docs afterward.
+
+`pnpm typecheck / lint / build / test` all pass — 116 unit tests (up from 111; 5 new cases cover
+the new blocked-branch classification, including two existing test cases that moved from
+`high`/`critical` to `blocked` now that pushing directly to main/master is refused outright rather
+than merely flagged high-risk).
 
 ## Phase 9 — Reports — TODO
 

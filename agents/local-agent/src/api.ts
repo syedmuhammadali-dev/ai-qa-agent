@@ -3,6 +3,7 @@ import type {
   CommandAuditInput,
   LocalAgentSession,
   PendingFix,
+  PendingRelease,
   RunStatus,
 } from "@ai-qa-agent/agent-core";
 import type { PermissionMode } from "@ai-qa-agent/command-policy";
@@ -162,6 +163,40 @@ export async function reportFixApplied(
 ): Promise<void> {
   await request(
     `${apiUrl}/api/projects/${projectId}/runs/${runId}/fix-applied`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${sessionToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(result),
+    },
+  );
+}
+
+export async function fetchPendingReleases(
+  apiUrl: string,
+  sessionToken: string,
+  projectId: string,
+): Promise<PendingRelease[]> {
+  const data = await request<{ releases: PendingRelease[] }>(
+    `${apiUrl}/api/projects/${projectId}/releases/pending`,
+    {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    },
+  );
+  return data.releases;
+}
+
+export async function reportReleasePushed(
+  apiUrl: string,
+  sessionToken: string,
+  projectId: string,
+  runId: string,
+  result: { success: boolean; commitSha?: string; failureReason?: string },
+): Promise<void> {
+  await request(
+    `${apiUrl}/api/projects/${projectId}/runs/${runId}/release-pushed`,
     {
       method: "POST",
       headers: {

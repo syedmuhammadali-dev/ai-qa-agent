@@ -22,6 +22,7 @@ import { scanForSecurityFindings } from "@ai-qa-agent/security-engine";
 import {
   createRunWorkspace,
   hashOutput,
+  isProtectedBranch,
   previewOutput,
   pruneRuns,
 } from "@ai-qa-agent/agent-core";
@@ -35,7 +36,9 @@ import {
   createRun,
   exchangePairingCode,
   fetchPendingFixes,
+  fetchPendingReleases,
   reportFixApplied,
+  reportReleasePushed,
   submitCommandAudit,
   updateRun,
   uploadEvidence,
@@ -736,6 +739,101 @@ program
           regressionLog: `${result.stdout}\n${result.stderr}`,
           regressionExitCode: result.exitCode,
         },
+      );
+    }
+
+    process.exitCode = anyFailed ? 1 : 0;
+  });
+
+program
+  .command("push-release")
+  .description(
+    "Push a release branch confirmed on the dashboard's pre-push confirmation screen: real branch, real commit under a transparent machine identity, real push, real PR — never main/master",
+  )
+  .option("--cwd <dir>", "Project directory", process.cwd())
+  .action(async (opts: { cwd: string }) => {
+    const session = requireSession();
+    const releases = await fetchPendingReleases(
+      session.apiUrl,
+      session.sessionToken,
+      session.projectId,
+    );
+
+    if (releases.length === 0) {
+      console.log("No confirmed releases waiting to be pushed.");
+      return;
+    }
+
+    let anyFailed = false;
+
+    for (const release of releases) {
+      console.log(`\nPushing release: ${release.branchName} (base: ${release.baseBranch})`);
+
+      if (isProtectedBranch(release.branchName)) {
+        console.error(
+          `Refusing: "${release.branchName}" is a protected branch name. This should never happen — the dashboard already validates this.`,
+        );
+        anyFailed = true;
+        await reportReleasePushed(
+          session.apiUrl,
+          session.sessionToken,
+          session.projectId,
+          release.runId,
+          { success: false, failureReason: "Branch name was protected (main/master) — refused locally." },
+        );
+        continue;
+      }
+
+      const steps: Array<{ command: string; reason: string }> = [
+        {
+          command: `git checkout -b ${release.branchName}`,
+          reason: "Create a release branch for a verified, applied fix",
+        },
+        {
+          command: `git add ${release.changedFiles.map((f) => `"${f}"`).join(" ")}`,
+          reason: "Stage the applied fix for commit",
+        },
+        {
+          command: `git -c user.name="AI QA Agent" -c user.email="ai-qa-agent@users.noreply.github.com" commit -m "${release.commitMessage.replace(/"/g, "'")}"`,
+          reason: "Commit the applied fix under a transparent machine identity, never impersonating the user",
+        },
+        {
+          command: `git push origin ${release.branchName}`,
+          reason: "Push the release branch to the remote",
+        },
+      ];
+
+      let failed = false;
+      for (const step of steps) {
+        const exitCode = await runCommandThroughPolicy(session, step.command, step.reason, opts.cwd);
+        if (exitCode !== 0) {
+          console.error(`Step failed (exit ${exitCode}): ${step.command}`);
+          anyFailed = true;
+          failed = true;
+          await reportReleasePushed(
+            session.apiUrl,
+            session.sessionToken,
+            session.projectId,
+            release.runId,
+            { success: false, failureReason: `"${step.command}" failed (exit ${exitCode})` },
+          );
+          break;
+        }
+      }
+      if (failed) continue;
+
+      const sha = await runCommand("git rev-parse HEAD", opts.cwd);
+      const commitSha = sha.stdout.trim() || undefined;
+
+      await reportReleasePushed(
+        session.apiUrl,
+        session.sessionToken,
+        session.projectId,
+        release.runId,
+        { success: true, commitSha },
+      );
+      console.log(
+        `Pushed ${release.branchName}${commitSha ? ` (${commitSha.slice(0, 7)})` : ""}. Check the dashboard for the PR link.`,
       );
     }
 

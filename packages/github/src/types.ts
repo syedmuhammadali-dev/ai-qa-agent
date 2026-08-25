@@ -59,3 +59,9 @@ export interface GitHubCompareResult {
   totalCommits: number;
   files: GitHubCompareFile[];
 }
+
+export interface GitHubPullRequest {
+  number: number;
+  htmlUrl: string;
+  state: string;
+}

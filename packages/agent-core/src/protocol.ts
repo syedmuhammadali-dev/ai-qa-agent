@@ -89,4 +89,50 @@ export interface RunRecord {
   /** Firebase Storage paths — only present if the project opted into cloud
    * evidence upload; local screenshots are the default and stay local. */
   evidencePaths?: string[];
+  release?: ReleasePlan;
+}
+
+/** Transparent machine identity used for every commit the agent creates —
+ * never impersonates the human user. */
+export const MACHINE_COMMITTER = {
+  name: "AI QA Agent",
+  email: "ai-qa-agent@users.noreply.github.com",
+} as const;
+
+export type ReleaseStatus = "pending" | "confirmed" | "rejected" | "pushed" | "failed";
+
+/** A proposed branch/commit/PR for an already-applied, regression-verified
+ * fix — shown on a pre-push confirmation screen before anything is pushed.
+ * `branchName` is always machine-generated and validated to never be
+ * main/master; the local agent re-validates this itself before running git. */
+export interface ReleasePlan {
+  branchName: string;
+  baseBranch: string;
+  commitMessage: string;
+  changedFiles: string[];
+  testsSummary: string;
+  findingsSummary: string;
+  aiExplanation: string;
+  status: ReleaseStatus;
+  createdAt: number;
+  decidedAt?: number;
+  decidedByUid?: string;
+  pushedAt?: number;
+  commitSha?: string;
+  prUrl?: string;
+  failureReason?: string;
+}
+
+/** A confirmed release plan pending push, as the local agent sees it. */
+export interface PendingRelease extends ReleasePlan {
+  runId: string;
+}
+
+const PROTECTED_BRANCHES = new Set(["main", "master"]);
+
+/** Never let a release target main/master — enforced both server-side
+ * (when a plan is created/confirmed) and again by the local agent right
+ * before it runs any git command, so no single trust boundary is load-bearing. */
+export function isProtectedBranch(name: string): boolean {
+  return PROTECTED_BRANCHES.has(name.trim().toLowerCase());
 }
