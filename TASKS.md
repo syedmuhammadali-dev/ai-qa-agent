@@ -332,6 +332,17 @@ spec but worth closing for a genuinely production-grade project:
   `test:e2e` are intentionally left out of CI for now — they need real Firebase project secrets
   that aren't configured as GitHub Actions secrets yet; the workflow file documents exactly what
   to add to turn them on.
+  - Verified live on the real GitHub Actions runner, not just locally — the first real push
+    surfaced two genuine CI-only failures neither `pnpm typecheck`/`pnpm test:rules` caught
+    locally (both environments differ from a clean CI checkout in ways that matter): (1)
+    `Typecheck` failed because a fresh checkout has no `.next/dev/types` yet — Next's
+    auto-generated route/layout types apps/web's tsconfig references — fixed with a `next
+    typegen` step before typecheck; (2) `rules-tests` failed with the real error `firebase-tools
+    no longer supports Java version before 21` (the Java 13→15 firebase-tools bump above needs
+    Java 21+, not 17) — fixed the `actions/setup-java` version. Re-pushed twice, watched each
+    real run via the public Actions API, and the third run passed both jobs in full: 142 unit +
+    3 integration tests, typecheck/lint/build, and all 14 rules tests against a real freshly
+    provisioned Firestore/Storage emulator.
 - **`pnpm audit` found 18 real vulnerabilities** (1 critical, 8 high) — all traced to a single
   path: `firebase-tools@13.35.1 > tar@6.2.1` (a dev-only dependency, never shipped to production,
   used only by `pnpm test:rules`). Tried a `pnpm-workspace.yaml` `overrides` pin first; confirmed
