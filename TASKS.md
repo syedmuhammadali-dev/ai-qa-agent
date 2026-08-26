@@ -407,3 +407,12 @@ sign-in's actual end-to-end success still can't be verified without a human comp
 Google login (same OAuth-consent limitation as everywhere else in this project) — the fix applied
 is Firebase's own documented resolution for the exact error that was reproduced, but the user
 should retest and report back if anything still fails.
+
+**Follow-up from the user's retest**: `auth/unauthorized-domain` on the deployed (Vercel) URL —
+this is a Firebase Console setting (Authentication → Settings → Authorized domains), not a code
+issue; can't be fixed from the repo, needs the user to add their Vercel domain there themselves.
+Also reported: buttons had no `cursor: pointer`, and the login/signup email/password inputs had
+no placeholder text. Both real, both fixed: `cursor-pointer`/`disabled:cursor-not-allowed` added
+to the shared `Button` component (so every button in the app gets it, not just these two pages),
+and real placeholders (`you@example.com`, `Enter your password` / `At least 6 characters`) added
+to both forms. `pnpm typecheck`/`pnpm lint` both pass.
