@@ -24,6 +24,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # apps/web's tsconfig references Next.js's auto-generated route/layout
+      # types (.next/dev/types) — on a fresh checkout those don't exist yet,
+      # so a bare `tsc --noEmit` fails on things like the root layout's
+      # `LayoutProps` before any real code is even checked. Generate them
+      # first, the same fix used repeatedly in local dev for the same issue.
+      - name: Generate Next.js route types
+        run: pnpm --filter web exec next typegen
+
       - name: Typecheck
         run: pnpm typecheck
 
@@ -60,6 +68,16 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      # A fresh CI runner has no emulator binaries cached, and downloading
+      # them lazily inside `emulators:exec` has a known history of hanging
+      # or failing non-interactively in CI. Download them explicitly first
+      # so failures here are attributable to the download step, not buried
+      # inside the test run.
+      - name: Pre-download Firestore/Storage emulators
+        run: |
+          npx firebase-tools setup:emulators:firestore
+          npx firebase-tools setup:emulators:storage
 
       # Firestore/Storage security-rules tests run against the real local
       # emulator with a fake project id — no live Firebase credentials
