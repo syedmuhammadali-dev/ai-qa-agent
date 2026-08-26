@@ -317,3 +317,28 @@ blocked on the project owner's free-tier billing choice, not a code gap — the 
 off by default. GitHub OAuth's human-consent requirement is a recurring, accepted limitation rather
 than a gap, hit and documented identically in Phases 2/6/7/8/10 — every other part of every
 GitHub-touching pipeline is verified live against the real API.
+
+## Post-Phase-10 polish (2026-08-25)
+
+Real gaps found by re-auditing the repo after all 10 phases, not part of the original product
+spec but worth closing for a genuinely production-grade project:
+
+- **LICENSE** (MIT, user's choice) added — was missing entirely.
+- **README.md** rewrote a stale "Phase 1 done" status into an accurate feature overview, full
+  monorepo layout, every test command, and local-agent CLI usage examples.
+- **`.github/workflows/ci.yml`** added — typecheck/lint/unit/integration/build on every push and
+  PR to master, plus a real Firestore/Storage rules job against the local emulator (no live
+  Firebase credentials needed, safe to run on any PR without repo secrets). `test:visual`/
+  `test:e2e` are intentionally left out of CI for now — they need real Firebase project secrets
+  that aren't configured as GitHub Actions secrets yet; the workflow file documents exactly what
+  to add to turn them on.
+- **`pnpm audit` found 18 real vulnerabilities** (1 critical, 8 high) — all traced to a single
+  path: `firebase-tools@13.35.1 > tar@6.2.1` (a dev-only dependency, never shipped to production,
+  used only by `pnpm test:rules`). Tried a `pnpm-workspace.yaml` `overrides` pin first; confirmed
+  via `pnpm why tar` that it silently didn't take effect for firebase-tools's own direct
+  dependency across three reinstall attempts (a real pnpm 9.15 quirk, not user error — worth
+  knowing about for future dependency pinning in this repo). Fixed properly instead by bumping
+  `firebase-tools` to its latest major (13 → 15.28.1), which bundles a patched `tar` natively.
+  Verified the major bump didn't silently break anything: re-ran the full 14-test Firestore/Storage
+  rules suite against the real local emulator afterward — all still pass. `pnpm audit` now reports
+  6 vulnerabilities (2 low, 4 moderate), none critical/high.

@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Integration tests (export-zip, real fixtures)
+        run: pnpm test:integration
+
+      - name: Build
+        run: pnpm build
+
+  rules-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Firestore/Storage security-rules tests run against the real local
+      # emulator with a fake project id — no live Firebase credentials
+      # needed, so this is safe to run on every PR without secrets.
+      - name: Firestore/Storage rules tests
+        run: npx firebase-tools emulators:exec --only firestore,storage "pnpm test:rules"
+
+# Intentionally not run in CI: `pnpm test:visual` and `pnpm test:e2e`. Both
+# need a real Firebase project's live Auth/Firestore (not the emulator) via
+# FIREBASE_ADMIN_* / NEXT_PUBLIC_FIREBASE_* secrets that aren't configured in
+# this repo yet. Add them as GitHub Actions secrets and a job mirroring
+# `build-and-test` above (with `npx playwright install --with-deps chromium`
+# first) to enable them here — see playwright.config.ts / playwright.e2e.config.ts.
