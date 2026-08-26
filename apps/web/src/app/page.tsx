@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { Loader2, Sparkles } from "lucide-react";
 import { useAuth } from "@/lib/auth/auth-context";
 
 export default function RootPage() {
@@ -27,9 +28,15 @@ export default function RootPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
+    <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background">
       <h1 className="sr-only">AI QA Agent</h1>
-      Loading…
+      <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-muted/40">
+        <Sparkles className="h-5 w-5 text-foreground" />
+      </div>
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        Loading AI QA Agent…
+      </div>
     </main>
   );
 }

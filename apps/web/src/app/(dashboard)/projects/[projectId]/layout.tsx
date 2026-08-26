@@ -1,7 +1,7 @@
 "use client";
 
 import { use } from "react";
-import { ProjectSidebar } from "@/components/layout/project-sidebar";
+import { ProjectMobileNav, ProjectSidebar } from "@/components/layout/project-sidebar";
 import { useProject } from "@/lib/projects/use-project";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -19,7 +19,8 @@ export default function ProjectLayout({
     <div className="flex min-h-[calc(100vh-3.5rem)]">
       <ProjectSidebar projectId={projectId} />
       <div className="flex-1 overflow-auto">
-        <div className="border-b border-border px-6 py-3">
+        <div className="flex items-center gap-2 border-b border-border px-3 py-3 md:px-6">
+          <ProjectMobileNav projectId={projectId} />
           {loading ? (
             <Skeleton className="h-6 w-48" />
           ) : (

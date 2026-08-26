@@ -353,3 +353,57 @@ spec but worth closing for a genuinely production-grade project:
   Verified the major bump didn't silently break anything: re-ran the full 14-test Firestore/Storage
   rules suite against the real local emulator afterward — all still pass. `pnpm audit` now reports
   6 vulnerabilities (2 low, 4 moderate), none critical/high.
+
+## Real usage bug pass (2026-08-26)
+
+The user tried the app by hand and reported: login/signup looked bad and was too small, the
+root loading screen was a bare "Loading…" text, Google sign-in wasn't working with a Firebase
+error, and asked for a responsiveness check. Investigated live against the real dev server —
+found and fixed 5 real, previously-unnoticed bugs, none fabricated:
+
+1. **Google sign-in silently failing** — real console error reproduced via Playwright driving
+   the actual popup flow: `Cross-Origin-Opener-Policy policy would block the window.closed call.`
+   Confirmed the popup itself reached Google's real sign-in page with a valid `client_id`/
+   `redirect_uri` (so OAuth config itself was correct) — the failure is Next.js's default COOP
+   header blocking Firebase's popup-close detection, a documented Firebase/Next.js incompatibility.
+   Fixed by setting `Cross-Origin-Opener-Policy: same-origin-allow-popups` in `next.config.ts`
+   (Firebase's own documented fix for this exact issue).
+2. **A real unhandled crash**: `value.toMillis is not a function` in `useProject`/`useProjects`/
+   `useCommands` whenever a Firestore timestamp field ever arrived as anything other than a live
+   `Timestamp` instance (a plain number, a `{seconds,...}` object, or an unresolved
+   `serverTimestamp()`) — the crash happened inside the `onSnapshot` callback *before*
+   `setLoading(false)`, so the page got stuck loading forever with no visible error. Consolidated
+   the three duplicated `toMillis` implementations into one defensive `lib/firebase/timestamps.ts`
+   that degrades to "now" instead of throwing for any unrecognized shape.
+3. **A real Base UI console warning** on every `Button` rendered as a Next.js `<Link>` (the
+   "Edit connections" pattern used on 3 pages): `nativeButton` defaults to `true`, which doesn't
+   match a non-`<button>` render target. Fixed at the `Button` wrapper itself — `nativeButton`
+   now defaults to `false` whenever a custom `render` prop is given, so every future callsite
+   gets this right automatically instead of relying on each caller to remember.
+4. **Root loading screen and login/signup redesigned** — replaced the plain "Loading…" text with
+   a branded spinner; login/signup went from a cramped `max-w-sm` card floating in a stark black
+   viewport with no branding to a `max-w-md` card with the app's logo/name above it, a subtle
+   radial-gradient background, a real (SVG, correct 4-color) Google icon, an "or" divider between
+   email and Google sign-in, and per-button loading spinners (previously both buttons just
+   disabled with no visual feedback, and both shared one boolean so there was no way to tell
+   *which* action was in flight).
+5. **A real mobile responsiveness bug**: the project sidebar (16 nav items, fixed `w-56`) was
+   always rendered, full width, with zero responsive behavior — on a 390px viewport it consumed
+   over half the screen, squeezing all page content into what was left. Confirmed via a real
+   Playwright screenshot at mobile width, not just a media-query read. Fixed with a proper
+   responsive pattern: the sidebar is `hidden md:flex`, and a new hamburger-triggered slide-over
+   (`ProjectMobileNav`, using the existing `Sheet` component) covers every project route below
+   the `md` breakpoint — verified live: opened it, clicked a real nav link, confirmed real
+   navigation and that the sheet closed itself.
+
+Verification for all 5: real dev server, real Playwright automation (not manual eyeballing) —
+screenshots at desktop/laptop/tablet/mobile widths before and after, a full 16-route console-error
+sweep through a real signed-in session (`pageerror` + `console.error` listeners) that came back
+clean only after all fixes landed, and `pnpm typecheck / lint / test / build` plus a full re-run
+of `test:visual` (baselines regenerated for the redesigned login/signup — old ones no longer
+match on purpose) and `test:e2e` (still passes unmodified, since the DOM ids/roles it drives were
+kept stable through the redesign). No horizontal overflow at any tested viewport width. Google
+sign-in's actual end-to-end success still can't be verified without a human completing a real
+Google login (same OAuth-consent limitation as everywhere else in this project) — the fix applied
+is Firebase's own documented resolution for the exact error that was reproduced, but the user
+should retest and report back if anything still fails.

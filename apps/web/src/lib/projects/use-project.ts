@@ -1,8 +1,9 @@
 "use client";
 
-import { doc, onSnapshot, Timestamp } from "firebase/firestore";
+import { doc, onSnapshot } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase/client";
+import { toMillis } from "@/lib/firebase/timestamps";
 import type { Project } from "@/lib/projects/types";
 
 export function useProject(projectId: string) {
@@ -40,8 +41,4 @@ export function useProject(projectId: string) {
   }, [projectId]);
 
   return { project, loading };
-}
-
-function toMillis(value: Timestamp | undefined): number {
-  return value ? value.toMillis() : Date.now();
 }

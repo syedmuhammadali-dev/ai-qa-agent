@@ -9,12 +9,12 @@ import {
   orderBy,
   query,
   serverTimestamp,
-  Timestamp,
   where,
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase/client";
 import { useAuth } from "@/lib/auth/auth-context";
+import { toMillis } from "@/lib/firebase/timestamps";
 import type { NewProjectInput, Project } from "@/lib/projects/types";
 
 export function useProjects() {
@@ -82,8 +82,4 @@ export function useProjects() {
   }
 
   return { projects, loading, createProject, removeProject };
-}
-
-function toMillis(value: Timestamp | undefined): number {
-  return value ? value.toMillis() : Date.now();
 }

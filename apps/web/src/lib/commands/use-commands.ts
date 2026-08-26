@@ -1,9 +1,10 @@
 "use client";
 
-import { collection, limit, onSnapshot, orderBy, query, Timestamp } from "firebase/firestore";
+import { collection, limit, onSnapshot, orderBy, query } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import type { CommandAuditRecord } from "@ai-qa-agent/agent-core";
 import { db } from "@/lib/firebase/client";
+import { toMillis } from "@/lib/firebase/timestamps";
 
 export function useCommands(projectId: string) {
   const [commands, setCommands] = useState<CommandAuditRecord[]>([]);
@@ -49,9 +50,4 @@ export function useCommands(projectId: string) {
   }, [projectId]);
 
   return { commands, loading };
-}
-
-function toMillis(value: Timestamp | number | undefined): number {
-  if (typeof value === "number") return value;
-  return value ? value.toMillis() : Date.now();
 }
