@@ -49,7 +49,14 @@ export default function OverviewPage({ params }: { params: Promise<{ projectId: 
             <div key={label} className="flex items-center justify-between border-b border-border py-2 text-sm last:border-0">
               <span className="text-muted-foreground">{label}</span>
               {value ? (
-                <span className="truncate font-mono text-xs">{value}</span>
+                <a
+                  href={value}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="truncate font-mono text-xs text-foreground underline-offset-2 hover:text-primary hover:underline"
+                >
+                  {value}
+                </a>
               ) : (
                 <Badge variant="outline" className="text-muted-foreground">
                   Not set

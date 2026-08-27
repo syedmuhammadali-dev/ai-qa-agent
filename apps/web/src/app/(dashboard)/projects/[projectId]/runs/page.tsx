@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CopyButton } from "@/components/ui/copy-button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { XtermView } from "@/components/terminal/xterm-view";
 import { FixDiffViewer } from "@/components/code/fix-diff-viewer";
@@ -219,7 +220,12 @@ function RunCard({ projectId, run, defaultOpen }: { projectId: string; run: RunR
     <Card>
       <CardHeader className="cursor-pointer select-none" onClick={() => setExpanded((v) => !v)}>
         <div className="flex items-center justify-between gap-4">
-          <code className="truncate text-sm">{run.command}</code>
+          <div className="flex min-w-0 items-center gap-1">
+            <code className="truncate text-sm">{run.command}</code>
+            <span onClick={(e) => e.stopPropagation()}>
+              <CopyButton value={run.command} />
+            </span>
+          </div>
           <div className="flex shrink-0 items-center gap-2">
             <Badge variant="outline" className={STATUS_VARIANT[run.status]}>
               {run.status}
@@ -345,8 +351,10 @@ function FixSection({ fix, onDecision }: { fix: FixProposal; onDecision: (decisi
             </div>
           )}
           {fix.status === "approved" && (
-            <p className="text-xs text-emerald-500">
-              Approved — run <code>ai-qa-agent apply-fixes</code> locally to apply it and run the regression suite.
+            <p className="flex flex-wrap items-center gap-1 text-xs text-emerald-500">
+              Approved — run <code>ai-qa-agent apply-fixes</code>
+              <CopyButton value="ai-qa-agent apply-fixes" />
+              locally to apply it and run the regression suite.
             </p>
           )}
           {fix.status === "applied" && <p className="text-xs text-emerald-500">Applied — regression suite passed.</p>}
@@ -417,15 +425,21 @@ function ReleaseSection({
         </div>
       )}
       {release.status === "confirmed" && (
-        <p className="text-xs text-amber-500">
-          Confirmed — run <code>ai-qa-agent push-release</code> locally to create the real branch, commit
-          (as &quot;AI QA Agent&quot;, never impersonating you), push, and open a pull request. Never targets
-          main/master.
+        <p className="flex flex-wrap items-center gap-1 text-xs text-amber-500">
+          Confirmed — run <code>ai-qa-agent push-release</code>
+          <CopyButton value="ai-qa-agent push-release" />
+          locally to create the real branch, commit (as &quot;AI QA Agent&quot;, never
+          impersonating you), push, and open a pull request. Never targets main/master.
         </p>
       )}
       {release.status === "pushed" && (
         <div className="flex flex-col gap-1 text-xs text-emerald-500">
-          <p>Pushed{release.commitSha ? ` (${release.commitSha.slice(0, 7)})` : ""}.</p>
+          <p className="flex items-center gap-1">
+            Pushed{release.commitSha ? ` (${release.commitSha.slice(0, 7)})` : ""}.
+            {release.commitSha && (
+              <CopyButton value={release.commitSha} className="text-emerald-500 hover:text-emerald-400" />
+            )}
+          </p>
           {release.prUrl && (
             <a
               href={release.prUrl}
@@ -452,7 +466,12 @@ function CommandRow({ command }: { command: CommandAuditRecord }) {
     <Card>
       <CardHeader className="cursor-pointer select-none" onClick={() => setExpanded((v) => !v)}>
         <div className="flex items-center justify-between gap-4">
-          <code className="truncate text-sm">{command.command}</code>
+          <div className="flex min-w-0 items-center gap-1">
+            <code className="truncate text-sm">{command.command}</code>
+            <span onClick={(e) => e.stopPropagation()}>
+              <CopyButton value={command.command} />
+            </span>
+          </div>
           <div className="flex shrink-0 items-center gap-2">
             <Badge variant="outline" className={RISK_VARIANT[command.risk]}>
               {command.risk}

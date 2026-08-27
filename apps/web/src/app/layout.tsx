@@ -18,6 +18,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "AI QA Agent — Autonomous QA & Production Readiness",
   description: "AI-powered autonomous software testing and production-readiness platform.",
+  verification: {
+    google: "aAkRFPqsfqlb67JF5wByOAZpg2O_6CKpGpUFQ1fLFRA",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

@@ -160,7 +160,15 @@ function RepoPicker({ projectId }: { projectId: string }) {
             {repos.map((r) => (
               <div key={r.id} className="flex items-center justify-between py-2">
                 <div className="flex flex-col">
-                  <span className="text-sm font-medium">{r.fullName}</span>
+                  <a
+                    href={r.htmlUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="w-fit text-sm font-medium underline-offset-2 hover:text-primary hover:underline"
+                  >
+                    {r.fullName}
+                  </a>
                   <span className="text-xs text-muted-foreground">{r.defaultBranch}</span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -193,7 +201,14 @@ function RepoWorkspace({
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="text-base">
-            {owner}/{repo}
+            <a
+              href={`https://github.com/${owner}/${repo}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline-offset-2 hover:text-primary hover:underline"
+            >
+              {owner}/{repo}
+            </a>
           </CardTitle>
           <RelinkButton projectId={projectId} />
         </div>

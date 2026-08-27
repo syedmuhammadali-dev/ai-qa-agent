@@ -25,6 +25,25 @@ export function FirebaseNotConfigured() {
             <code>.env.example</code>) to enable authentication: <code>NEXT_PUBLIC_FIREBASE_API_KEY</code>,{" "}
             <code>NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN</code>, <code>NEXT_PUBLIC_FIREBASE_PROJECT_ID</code>, and{" "}
             <code>NEXT_PUBLIC_FIREBASE_APP_ID</code> at minimum. Restart the dev server after editing.
+            Find these under{" "}
+            <a
+              href="https://console.firebase.google.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-foreground underline underline-offset-2 hover:text-amber-500"
+            >
+              Firebase Console
+            </a>{" "}
+            → Project settings → General, or follow the{" "}
+            <a
+              href="https://firebase.google.com/docs/web/setup"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-foreground underline underline-offset-2 hover:text-amber-500"
+            >
+              web setup guide
+            </a>
+            .
           </CardDescription>
         </CardHeader>
       </Card>

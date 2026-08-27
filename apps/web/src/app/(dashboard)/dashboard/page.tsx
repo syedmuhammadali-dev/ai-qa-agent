@@ -122,7 +122,15 @@ export default function DashboardPage() {
                   </Badge>
                 </div>
                 {project.githubRepoUrl && (
-                  <p className="text-xs text-muted-foreground truncate mb-4">{project.githubRepoUrl}</p>
+                  <a
+                    href={project.githubRepoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="relative z-10 block w-fit max-w-full truncate text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline mb-4"
+                  >
+                    {project.githubRepoUrl}
+                  </a>
                 )}
                 <Button
                   variant="ghost"
