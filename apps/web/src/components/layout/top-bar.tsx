@@ -6,6 +6,7 @@ import { LogOut, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/lib/auth/auth-context";
+import { CommandPalette } from "@/components/layout/command-palette";
 
 export function TopBar() {
   const { user, logOut } = useAuth();
@@ -27,6 +28,7 @@ export function TopBar() {
         <span className="text-sm font-bold tracking-tight hidden sm:block">AI QA Agent</span>
       </Link>
       <div className="flex items-center gap-2">
+        <CommandPalette />
         <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-muted/40 border border-border/40">
           <Avatar className="h-5 w-5">
             <AvatarFallback className="text-[10px] bg-primary/20 text-primary font-semibold">{initial}</AvatarFallback>
