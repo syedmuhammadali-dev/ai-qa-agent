@@ -15,10 +15,9 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useProjects } from "@/lib/projects/use-projects";
+import type { NewProjectInput } from "@/lib/projects/types";
 
-export function NewProjectDialog() {
-  const { createProject } = useProjects();
+export function NewProjectDialog({ createProject }: { createProject: (input: NewProjectInput) => Promise<void> }) {
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [name, setName] = useState("");

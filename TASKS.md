@@ -416,3 +416,34 @@ no placeholder text. Both real, both fixed: `cursor-pointer`/`disabled:cursor-no
 to the shared `Button` component (so every button in the app gets it, not just these two pages),
 and real placeholders (`you@example.com`, `Enter your password` / `At least 6 characters`) added
 to both forms. `pnpm typecheck`/`pnpm lint` both pass.
+
+## Remaining-tasks UI polish + a real missing-index bug (2026-08-27)
+
+Finished every item in `RemainingTasks.md` (input focus glow, sliding sidebar-nav highlight via
+`framer-motion`'s `layoutId`, animated gradient-trail border on the dashboard empty state,
+animated Firebase-not-configured alert, branded loading state for the auth gate). Full detail is
+in `RemainingTasks.md`'s own "Live verification" section (gitignored, local-only); the short
+version: live Playwright testing against the real dev server caught two real bugs before they
+shipped, neither of which `pnpm build`/typecheck would have caught —
+
+1. The new animated border on the empty-state card blocked clicks on "New Project" (a decorative
+   `::before` pseudo-element painting on top of it). Fixed with `pointer-events: none`.
+2. **A real, previously-undeployed Firestore composite index** (`projects` collection,
+   `ownerId` ASC + `createdAt` DESC) — declared in `firestore.indexes.json` since early phases but
+   never actually pushed to the live Firebase project. Every project-list `onSnapshot` listener
+   was silently failing (`FirebaseError: The query requires an index`, swallowed by an error
+   callback that only did `setLoading(false)`), so a newly created project could take an
+   unpredictable, sometimes very long time to actually show up — this was assumed to be a
+   Firestore-latency "database delay" cosmetic issue, but the real cause was a missing dependency
+   the whole project-list feature had silently had since Phase 1. Deployed the index for real
+   (`firebase deploy --only firestore:indexes`, confirmed `state: READY` via the Admin REST API —
+   indexes are free on Spark, unlike Storage's Blaze requirement) and made the error callback log
+   instead of swallow, so a regression here is visible again in the future. Also found and fixed a
+   related structural bug while debugging: `NewProjectDialog` had its own independent
+   `useProjects()` call instead of receiving `createProject` from `DashboardPage`, so two separate
+   hook instances (two separate Firestore listeners) existed on one page and an optimistic local
+   update in one never reached the other's render — fixed by lifting `createProject` into a prop.
+
+`pnpm typecheck / lint / build / test` all pass (142 unit tests, unchanged — UI/infra work, no new
+pure-logic packages). Verified live end-to-end with real Playwright runs against the real dev
+server and real Firestore both before and after each fix, not just automated checks.

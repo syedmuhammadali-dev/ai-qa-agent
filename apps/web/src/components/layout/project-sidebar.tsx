@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { motion } from "framer-motion";
 import {
   LayoutDashboard,
   Bot,
@@ -45,7 +46,15 @@ const navItems = [
   { slug: "settings", label: "Settings", icon: Settings },
 ] as const;
 
-function NavLinks({ projectId, onNavigate }: { projectId: string; onNavigate?: () => void }) {
+function NavLinks({
+  projectId,
+  onNavigate,
+  layoutPrefix,
+}: {
+  projectId: string;
+  onNavigate?: () => void;
+  layoutPrefix: string;
+}) {
   const pathname = usePathname();
   return (
     <>
@@ -58,14 +67,21 @@ function NavLinks({ projectId, onNavigate }: { projectId: string; onNavigate?: (
             href={href}
             onClick={onNavigate}
             className={cn(
-              "flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm transition-colors",
+              "relative flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm transition-colors",
               active
-                ? "bg-accent text-accent-foreground font-medium"
+                ? "text-accent-foreground font-medium"
                 : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
             )}
           >
-            <Icon className="h-4 w-4" />
-            {label}
+            {active && (
+              <motion.div
+                layoutId={`${layoutPrefix}-active-indicator`}
+                className="absolute inset-0 rounded-md bg-accent"
+                transition={{ type: "spring", stiffness: 500, damping: 40 }}
+              />
+            )}
+            <Icon className="relative z-10 h-4 w-4" />
+            <span className="relative z-10">{label}</span>
           </Link>
         );
       })}
@@ -78,7 +94,7 @@ function NavLinks({ projectId, onNavigate }: { projectId: string; onNavigate?: (
 export function ProjectSidebar({ projectId }: { projectId: string }) {
   return (
     <nav className="hidden w-56 shrink-0 flex-col gap-0.5 border-r border-border p-2 md:flex">
-      <NavLinks projectId={projectId} />
+      <NavLinks projectId={projectId} layoutPrefix="sidebar" />
     </nav>
   );
 }
@@ -96,7 +112,7 @@ export function ProjectMobileNav({ projectId }: { projectId: string }) {
         <SheetHeader className="px-1">
           <SheetTitle>Navigate project</SheetTitle>
         </SheetHeader>
-        <NavLinks projectId={projectId} onNavigate={() => setOpen(false)} />
+        <NavLinks projectId={projectId} onNavigate={() => setOpen(false)} layoutPrefix="mobile-nav" />
       </SheetContent>
     </Sheet>
   );
