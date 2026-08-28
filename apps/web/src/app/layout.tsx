@@ -15,11 +15,28 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+const title = "AI QA Agent — Autonomous QA & Production Readiness";
+const description = "AI-powered autonomous software testing and production-readiness platform.";
+
 export const metadata: Metadata = {
-  title: "AI QA Agent — Autonomous QA & Production Readiness",
-  description: "AI-powered autonomous software testing and production-readiness platform.",
+  metadataBase: new URL(appUrl),
+  title,
+  description,
   verification: {
     google: "aAkRFPqsfqlb67JF5wByOAZpg2O_6CKpGpUFQ1fLFRA",
+  },
+  openGraph: {
+    title,
+    description,
+    type: "website",
+    url: appUrl,
+    siteName: "AI QA Agent",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title,
+    description,
   },
 };
 
