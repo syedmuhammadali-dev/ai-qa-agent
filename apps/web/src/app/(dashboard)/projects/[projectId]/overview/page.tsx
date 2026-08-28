@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProject } from "@/lib/projects/use-project";
 import { ExecutionPipeline } from "@/components/layout/execution-pipeline";
+import { ReadinessSummary } from "@/components/layout/readiness-summary";
 
 export default function OverviewPage({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = use(params);
@@ -72,27 +73,31 @@ export default function OverviewPage({ params }: { params: Promise<{ projectId: 
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Execution pipeline</CardTitle>
-          <CardDescription>
-            Real state only — a step lights up when there&apos;s actual evidence for it (a connected
-            repo, a live local-agent session, a command of that category having run). See{" "}
-            <Button
-              render={<Link href={`/projects/${projectId}/runs`} />}
-              variant="link"
-              size="sm"
-              className="h-auto p-0"
-            >
-              Runs
-            </Button>{" "}
-            for the live output.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ExecutionPipeline projectId={projectId} project={project} />
-        </CardContent>
-      </Card>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Execution pipeline</CardTitle>
+            <CardDescription>
+              Real state only — a step lights up when there&apos;s actual evidence for it (a connected
+              repo, a live local-agent session, a command of that category having run). See{" "}
+              <Button
+                render={<Link href={`/projects/${projectId}/runs`} />}
+                variant="link"
+                size="sm"
+                className="h-auto p-0"
+              >
+                Runs
+              </Button>{" "}
+              for the live output.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ExecutionPipeline projectId={projectId} project={project} />
+          </CardContent>
+        </Card>
+
+        <ReadinessSummary projectId={projectId} />
+      </div>
     </div>
   );
 }

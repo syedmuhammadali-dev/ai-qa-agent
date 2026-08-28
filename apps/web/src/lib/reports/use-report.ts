@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import type { ProductionReadinessReport } from "@ai-qa-agent/report-generator";
 import { useAuth } from "@/lib/auth/auth-context";
 
@@ -10,7 +10,12 @@ export function useReport(projectId: string) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function generate() {
+  // Wrapped in useCallback bound to `user` (same pattern as useAiConfig's
+  // `refresh`) so a consumer's `useEffect(() => generate(), [generate])`
+  // automatically re-fires once auth finishes resolving after a hard reload
+  // — calling this before `user` is ready used to bail silently and never
+  // retry, since the identity never changed to re-trigger the effect.
+  const generate = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     setError(null);
@@ -27,7 +32,7 @@ export function useReport(projectId: string) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [user, projectId]);
 
   async function download(format: "markdown" | "html") {
     if (!user) return;

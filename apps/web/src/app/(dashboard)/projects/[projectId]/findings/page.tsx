@@ -25,8 +25,7 @@ export default function FindingsPage({ params }: { params: Promise<{ projectId: 
 
   useEffect(() => {
     generate();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId]);
+  }, [generate]);
 
   async function handleDownload(format: "markdown" | "html") {
     try {
