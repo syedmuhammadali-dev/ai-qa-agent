@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { NewProjectDialog } from "@/components/layout/new-project-dialog";
+import { OnboardingChecklist } from "@/components/layout/onboarding-checklist";
 import { useProjects } from "@/lib/projects/use-projects";
 import type { ProjectStatus } from "@/lib/projects/types";
 
@@ -56,6 +57,9 @@ export default function DashboardPage() {
         {/* Only show top button when projects exist */}
         {!loading && projects.length > 0 && <NewProjectDialog createProject={createProject} />}
       </motion.div>
+
+      {/* Onboarding checklist for the most recently created project */}
+      {!loading && projects.length > 0 && <OnboardingChecklist project={projects[0]} />}
 
       {/* Loading skeletons */}
       {loading && (

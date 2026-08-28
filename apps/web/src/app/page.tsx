@@ -44,7 +44,7 @@ export default function RootPage() {
     <main className="flex min-h-screen flex-col items-center justify-center bg-background overflow-hidden relative">
       {/* Background ambient light */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/20 rounded-full blur-[120px] opacity-50" />
-      
+
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -52,7 +52,7 @@ export default function RootPage() {
         className="relative z-10 flex flex-col items-center gap-8"
       >
         <motion.div
-          animate={{ 
+          animate={{
             boxShadow: ["0px 0px 0px 0px rgba(var(--primary), 0.2)", "0px 0px 40px 10px rgba(var(--primary), 0.4)", "0px 0px 0px 0px rgba(var(--primary), 0.2)"]
           }}
           transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
@@ -60,7 +60,7 @@ export default function RootPage() {
         >
           <Sparkles className="h-10 w-10 text-primary" />
         </motion.div>
-        
+
         <div className="flex flex-col items-center gap-3">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -71,7 +71,7 @@ export default function RootPage() {
               Initializing AI QA Agent
             </h1>
           </motion.div>
-          <motion.div 
+          <motion.div
             className="h-1 w-32 bg-secondary rounded-full overflow-hidden"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

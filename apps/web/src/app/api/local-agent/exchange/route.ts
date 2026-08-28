@@ -6,14 +6,23 @@ import { signSessionToken, verifyPairingCode } from "@/lib/local-agent/tokens";
 
 export async function POST(req: NextRequest) {
   if (!isFirebaseAdminConfigured || !process.env.LOCAL_AGENT_SHARED_SECRET) {
-    return NextResponse.json({ error: "Local agent pairing is not configured" }, { status: 503 });
+    return NextResponse.json(
+      { error: "Local agent pairing is not configured" },
+      { status: 503 },
+    );
   }
 
   const body = await req.json().catch(() => null);
   const code = body?.code;
-  const deviceLabel = typeof body?.deviceLabel === "string" ? body.deviceLabel.slice(0, 100) : "unknown device";
+  const deviceLabel =
+    typeof body?.deviceLabel === "string"
+      ? body.deviceLabel.slice(0, 100)
+      : "unknown device";
   if (typeof code !== "string") {
-    return NextResponse.json({ error: "Missing pairing code" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Missing pairing code" },
+      { status: 400 },
+    );
   }
 
   let pairing: { uid: string; projectId: string };
@@ -22,11 +31,14 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Invalid pairing code" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
-  const projectSnap = await getAdminDb().collection("projects").doc(pairing.projectId).get();
+  const projectSnap = await getAdminDb()
+    .collection("projects")
+    .doc(pairing.projectId)
+    .get();
   if (!projectSnap.exists) {
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
@@ -46,12 +58,17 @@ export async function POST(req: NextRequest) {
       revoked: false,
     });
 
-  const sessionToken = signSessionToken({ uid: pairing.uid, projectId: pairing.projectId, sessionId });
+  const sessionToken = signSessionToken({
+    uid: pairing.uid,
+    projectId: pairing.projectId,
+    sessionId,
+  });
 
   const response: LocalAgentSession = {
     sessionToken,
     projectId: pairing.projectId,
-    projectName: (projectSnap.data()?.name as string | undefined) ?? "Untitled project",
+    projectName:
+      (projectSnap.data()?.name as string | undefined) ?? "Untitled project",
   };
   return NextResponse.json(response);
 }
