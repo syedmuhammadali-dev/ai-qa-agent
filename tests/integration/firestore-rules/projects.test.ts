@@ -82,4 +82,37 @@ describe("projects/{projectId} security rules", () => {
       setDoc(doc(alice, "projects/p1/private/ai-config"), { apiKey: "leaked" })
     );
   });
+
+  it("allows the owner to read reportSnapshots but never write them from the client", async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), "projects/p1"), { ownerId: "alice", name: "Test" });
+      await setDoc(doc(ctx.firestore(), "projects/p1/reportSnapshots/s1"), {
+        overallScore: 80,
+        overallStatus: "PASS",
+        generatedAt: 1,
+      });
+    });
+    const alice = testEnv.authenticatedContext("alice").firestore();
+    await assertSucceeds(getDoc(doc(alice, "projects/p1/reportSnapshots/s1")));
+    await assertFails(
+      setDoc(doc(alice, "projects/p1/reportSnapshots/s2"), {
+        overallScore: 100,
+        overallStatus: "PASS",
+        generatedAt: 2,
+      })
+    );
+  });
+
+  it("denies a different signed-in user from reading someone else's reportSnapshots", async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), "projects/p1"), { ownerId: "alice", name: "Test" });
+      await setDoc(doc(ctx.firestore(), "projects/p1/reportSnapshots/s1"), {
+        overallScore: 80,
+        overallStatus: "PASS",
+        generatedAt: 1,
+      });
+    });
+    const bob = testEnv.authenticatedContext("bob").firestore();
+    await assertFails(getDoc(doc(bob, "projects/p1/reportSnapshots/s1")));
+  });
 });

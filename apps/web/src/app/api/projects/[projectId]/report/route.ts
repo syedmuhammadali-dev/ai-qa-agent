@@ -5,10 +5,35 @@ import {
   renderHtmlReport,
   renderMarkdownReport,
   type CheckStatus,
+  type ProductionReadinessReport,
   type ReportCategoryInput,
 } from "@ai-qa-agent/report-generator";
 import { getAdminDb, isFirebaseAdminConfigured } from "@/lib/firebase/admin";
 import { requireOwnedProject } from "@/lib/projects/server";
+
+const SNAPSHOT_DEDUPE_WINDOW_MS = 15 * 60 * 1000;
+
+/** Appends a lightweight score/status snapshot for the trend chart — every
+ * real report generation, not a scheduled job, so the trend only ever shows
+ * moments someone actually looked at readiness. Skips writing a duplicate
+ * when the score/status hasn't changed and the last snapshot is recent, so
+ * repeatedly clicking "Refresh" with nothing new doesn't flood the history. */
+async function recordReportSnapshot(projectId: string, report: ProductionReadinessReport) {
+  const snapshots = getAdminDb().collection("projects").doc(projectId).collection("reportSnapshots");
+  const latest = await snapshots.orderBy("generatedAt", "desc").limit(1).get();
+  const last = latest.docs[0]?.data();
+  const isDuplicate =
+    last &&
+    last.overallScore === report.overallScore &&
+    last.overallStatus === report.overallStatus &&
+    Date.now() - last.generatedAt < SNAPSHOT_DEDUPE_WINDOW_MS;
+  if (isDuplicate) return;
+  await snapshots.add({
+    overallScore: report.overallScore,
+    overallStatus: report.overallStatus,
+    generatedAt: Date.now(),
+  });
+}
 
 /** Maps a real command-audit category (from command-policy's classification,
  * or a direct-check CLI command) to the human-facing report category it
@@ -121,6 +146,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ proj
   );
 
   const report = computeReadinessReport(project.name ?? "Untitled project", categories);
+
+  await recordReportSnapshot(projectId, report);
 
   if (format === "markdown") {
     return new NextResponse(renderMarkdownReport(report), {

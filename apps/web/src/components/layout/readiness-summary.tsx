@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useReport } from "@/lib/reports/use-report";
+import { ScoreTrendChart } from "@/components/layout/score-trend-chart";
 import type { CheckStatus } from "@ai-qa-agent/report-generator";
 
 /** Fixed status palette — never themed, never reused for series identity.
@@ -117,6 +118,8 @@ export function ReadinessSummary({ projectId }: { projectId: string }) {
                 )}
               </div>
             </div>
+
+            <ScoreTrendChart projectId={projectId} />
 
             {/* Part-to-whole: category count by status */}
             {total > 0 && (

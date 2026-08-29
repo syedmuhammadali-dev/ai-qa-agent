@@ -64,6 +64,13 @@ service cloud.firestore {
         allow read: if ownsProject(projectId);
         allow write: if false;
       }
+      // Readiness-score snapshots, one per real report generation — written
+      // only by the server (Admin SDK) when GET /report actually computes a
+      // report, never by the client, so the trend can't be gamed.
+      match /reportSnapshots/{snapshotId} {
+        allow read: if ownsProject(projectId);
+        allow write: if false;
+      }
     }
 
     // Deny everything else by default.
