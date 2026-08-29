@@ -56,6 +56,7 @@ export default function LoginPage() {
         transition={{ duration: 1 }}
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/20 via-background to-background"
       />
+      <h1 className="sr-only">Log in to AI QA Agent</h1>
       <motion.div
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}

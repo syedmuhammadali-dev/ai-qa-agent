@@ -69,7 +69,11 @@ test("signup -> login -> create project -> delete project, end to end through th
   await page.getByRole("button", { name: "New Project" }).first().click();
   await page.fill("#name", projectName);
   await page.getByRole("button", { name: "Create project" }).click();
-  await expect(page.getByText(projectName)).toBeVisible({ timeout: 10000 });
+  // Exact heading match, not a substring getByText — the dashboard's
+  // OnboardingChecklist widget renders "Getting started with <project name>",
+  // which also contains the project name and would otherwise make this
+  // locator ambiguous (strict-mode violation).
+  await expect(page.getByRole("heading", { name: projectName, exact: true })).toBeVisible({ timeout: 10000 });
 
   // --- Navigate into it and confirm the overview page renders real project state ---
   await page.getByRole("link", { name: projectName }).click();
@@ -80,9 +84,9 @@ test("signup -> login -> create project -> delete project, end to end through th
   // listener alive rather than tearing it down with a full reload) ---
   await page.getByRole("link", { name: "AI QA Agent" }).click();
   await page.waitForURL("**/dashboard", { timeout: 10000 });
-  await expect(page.getByText(projectName)).toBeVisible({ timeout: 10000 });
+  await expect(page.getByRole("heading", { name: projectName, exact: true })).toBeVisible({ timeout: 10000 });
   await page.getByTitle("Delete project").first().click();
-  await expect(page.getByText(projectName)).not.toBeVisible({ timeout: 10000 });
+  await expect(page.getByRole("heading", { name: projectName, exact: true })).not.toBeVisible({ timeout: 10000 });
 
   // --- Cleanup: the auth user itself (project doc was already deleted through the UI) ---
   const auth = getAuth(adminApp);
