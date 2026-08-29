@@ -13,7 +13,8 @@ bring yourself (OpenRouter, Gemini, or any OpenAI-compatible provider).
 All 10 phases are done: Foundation, GitHub Integration, Local Agent, QA Engine, Cinematic
 UI, Intelligence, Safe Auto-Fix, GitHub Release, Reports, and Self Testing. See `TASKS.md`
 for the full phase-by-phase verification log — every "DONE" there is backed by real tests,
-real fixture projects, and real live end-to-end runs, not just a checkbox.
+real fixture projects, and real live end-to-end runs, not just a checkbox. A further polish
+pass on top of that added the dashboard UX and modernization items below.
 
 ## What it does
 
@@ -37,7 +38,24 @@ real fixture projects, and real live end-to-end runs, not just a checkbox.
 - **Reports** compute a transparent production-readiness score
   (`sum(score × weight) / sum(weight)`, shown on the report itself) from real command-audit
   history, exportable as JSON/Markdown/HTML, plus a verified zip export (secret scan → cleanup
-  → validate → README → sha256 integrity check).
+  → validate → README → sha256 integrity check). The project Overview page also shows this as
+  a live readiness meter, a category-status breakdown, and a real score-trend line built from
+  a snapshot recorded on every report generation — never fabricated or interpolated.
+
+### Dashboard experience
+
+- **Command palette** (`Cmd/Ctrl+K`) — jump to any project, any of its 16 tabs, or log out,
+  from anywhere in the dashboard.
+- **Notification bell** — derives real events (a run finishing, a fix proposed, a release
+  pushed) live from each project's own run history; no separate notifications backend to
+  drift out of sync.
+- **Onboarding checklist** — a guided "connect a repo → configure AI → connect the local
+  agent → run your first audit" widget on the dashboard for a first-time project, built from
+  the same real-evidence state the rest of the app uses, not a static tutorial. Disappears
+  once the project has real run history.
+- Real SEO surface for the public routes: `sitemap.xml`, `robots.txt`, a generated branded
+  OpenGraph image and favicon, and per-page titles — everything behind auth stays correctly
+  excluded from indexing.
 
 ## Monorepo layout
 
