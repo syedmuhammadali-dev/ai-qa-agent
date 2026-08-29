@@ -131,7 +131,7 @@ export default function SignupPage() {
             </Button>
           </CardContent>
           <CardFooter className="justify-center border-t border-border/50 pt-6 text-sm text-muted-foreground">
-            Already have an account?&nbsp;<Link href="/login" className="text-primary font-medium hover:underline">Log in</Link>
+            Already have an account?&nbsp;<Link href="/login" className="text-link font-medium hover:underline">Log in</Link>
           </CardFooter>
         </Card>
       </motion.div>

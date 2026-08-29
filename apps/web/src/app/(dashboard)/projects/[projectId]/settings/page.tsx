@@ -206,7 +206,7 @@ function LocalAgentCard({ project }: { project: Project }) {
         <div className="flex flex-col gap-2">
           <Label>Permission mode</Label>
           <Select value={mode} onValueChange={(v) => v && handleModeChange(v as PermissionMode)} disabled={savingMode}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full" aria-label="Permission mode">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -376,7 +376,7 @@ function AiProviderCard({
                 setModel(DEFAULT_MODELS[next]);
               }}
             >
-              <SelectTrigger>
+              <SelectTrigger aria-label="Provider">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

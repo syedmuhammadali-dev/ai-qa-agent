@@ -35,6 +35,7 @@
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
+  --color-link: var(--link);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
@@ -57,6 +58,7 @@
   --popover-foreground: oklch(0.145 0 0);
   --primary: oklch(0.205 0 0);
   --primary-foreground: oklch(0.985 0 0);
+  --link: oklch(0.205 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
@@ -90,8 +92,13 @@
   --card-foreground: oklch(0.97 0 0);
   --popover: oklch(0.17 0.012 264);
   --popover-foreground: oklch(0.97 0 0);
-  --primary: oklch(0.65 0.22 264);
+  --primary: oklch(0.55 0.22 264);
   --primary-foreground: oklch(0.98 0 0);
+  /* Lighter step of the same hue, for resting-state colored text on the dark
+     page background (e.g. auth footer links) — --primary itself is tuned as
+     a button background against white text, which is too dark to also work
+     as text color against this background at WCAG AA contrast. */
+  --link: oklch(0.75 0.18 264);
   --secondary: oklch(0.22 0.015 264);
   --secondary-foreground: oklch(0.97 0 0);
   --muted: oklch(0.22 0.015 264);

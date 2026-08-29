@@ -291,7 +291,7 @@ function BranchSelect({
 
   return (
     <Select value={value} onValueChange={(v) => onChange(v ?? "")}>
-      <SelectTrigger className="w-48">
+      <SelectTrigger className="w-48" aria-label="Branch">
         <SelectValue placeholder="Select a branch" />
       </SelectTrigger>
       <SelectContent>
@@ -422,7 +422,7 @@ function CompareView({ owner, repo }: { owner: string; repo: string }) {
       ) : (
         <div className="flex flex-wrap items-center gap-2">
           <Select value={base} onValueChange={(v) => setBase(v ?? "")}>
-            <SelectTrigger className="w-40">
+            <SelectTrigger className="w-40" aria-label="Base branch">
               <SelectValue placeholder="Base" />
             </SelectTrigger>
             <SelectContent>
@@ -435,7 +435,7 @@ function CompareView({ owner, repo }: { owner: string; repo: string }) {
           </Select>
           <span className="text-sm text-muted-foreground">...</span>
           <Select value={head} onValueChange={(v) => setHead(v ?? "")}>
-            <SelectTrigger className="w-40">
+            <SelectTrigger className="w-40" aria-label="Head branch">
               <SelectValue placeholder="Head" />
             </SelectTrigger>
             <SelectContent>
