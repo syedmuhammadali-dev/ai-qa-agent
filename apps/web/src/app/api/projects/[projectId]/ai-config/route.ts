@@ -54,17 +54,29 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
     ...(baseUrl ? { baseUrl } : {}),
   };
 
-  const result = await getAIProvider(provider).testConnection(config);
-  if (!result.ok) {
-    return NextResponse.json({ error: `Key validation failed: ${result.error}` }, { status: 400 });
+  // Never let an unexpected exception here (a bad Admin SDK credential, a
+  // Firestore write failure, etc.) escape as an uncaught crash — on Vercel
+  // that comes back to the client as an empty, non-JSON body instead of a
+  // real error message, which is worse than useless for diagnosing it.
+  try {
+    const result = await getAIProvider(provider).testConnection(config);
+    if (!result.ok) {
+      return NextResponse.json({ error: `Key validation failed: ${result.error}` }, { status: 400 });
+    }
+
+    await getAdminDb()
+      .collection("projects")
+      .doc(projectId)
+      .collection("private")
+      .doc("ai-config")
+      .set(config);
+
+    return NextResponse.json({ config: redactApiKey(config) });
+  } catch (err) {
+    console.error("Failed to save AI config:", err);
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Failed to save AI config" },
+      { status: 500 },
+    );
   }
-
-  await getAdminDb()
-    .collection("projects")
-    .doc(projectId)
-    .collection("private")
-    .doc("ai-config")
-    .set(config);
-
-  return NextResponse.json({ config: redactApiKey(config) });
 }
