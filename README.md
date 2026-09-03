@@ -93,13 +93,15 @@ Without Firebase configured, the app boots to an onboarding screen instead of pr
 to work — see `.env.example` for the required keys.
 
 To actually run audits against a project, pair the local agent once Firebase/GitHub are
-configured and a project exists in the dashboard:
+configured and a project exists in the dashboard. The CLI is published on npm as
+[`@syedmuhammadali-dev/ai-qa-agent`](https://www.npmjs.com/package/@syedmuhammadali-dev/ai-qa-agent)
+(the unscoped `ai-qa-agent` name belongs to someone else on the registry):
 
 ```bash
-npx ai-qa-agent connect <pairing-code>   # code comes from the project's Settings page
-npx ai-qa-agent test                      # run the real test suite through policy
-npx ai-qa-agent security-scan             # real secret/injection/XSS/CORS scan
-npx ai-qa-agent export-zip                # secret-scanned, integrity-checked zip export
+npx @syedmuhammadali-dev/ai-qa-agent connect <pairing-code>   # code comes from the project's Settings page
+npx @syedmuhammadali-dev/ai-qa-agent test                      # run the real test suite through policy
+npx @syedmuhammadali-dev/ai-qa-agent security-scan             # real secret/injection/XSS/CORS scan
+npx @syedmuhammadali-dev/ai-qa-agent export-zip                # secret-scanned, integrity-checked zip export
 ```
 
 ## Commands
